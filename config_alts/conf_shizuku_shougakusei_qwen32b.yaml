@@ -366,3 +366,4 @@ CHAT_HISTORY_DIR: "./chat_history/"
 # [this feature is currently removed, so useless for now]Turn on RAG (Retrieval Augmented Generation) or not. 
 RAG_ON: False
 LLMASSIST_RAG_ON: False
+CAMERA_INPUT_ON: false

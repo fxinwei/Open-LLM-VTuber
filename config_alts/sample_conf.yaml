@@ -28,4 +28,4 @@ LIVE2D_MODEL: "player_unit_00003"
 
 # Other Settings
 # VERBOSE: False
-# SAY_SENTENCE_SEPARATELY: True
+# SAY_SENTENCE_SEPARATELY: TrueCAMERA_INPUT_ON: false
