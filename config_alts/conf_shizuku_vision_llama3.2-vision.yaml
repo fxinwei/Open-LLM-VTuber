@@ -370,4 +370,4 @@ LLMASSIST_RAG_ON: False
 CAMERA_INPUT_ON: true  # enable camera
 CAMERA_INTERVAL: 10    # shot picture interval
 CAMERA_ID: 0          # camera ID
-VISION_MODEL: "llama3.2-vision" # LLM vision model default llama3.2-vision
+

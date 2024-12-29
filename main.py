@@ -25,7 +25,10 @@ from tts.tts_interface import TTSInterface
 from translate.translate_interface import TranslateInterface
 from translate.translate_factory import TranslateFactory
 from utils.audio_preprocessor import audio_filter
-
+from camera_input import CameraInput
+import cv2
+import time
+from ollama import generate
 
 class OpenLLMVTuberMain:
     """
@@ -99,6 +102,15 @@ class OpenLLMVTuberMain:
             self.translator = None
 
         self.llm: LLMInterface = self.init_llm()
+
+        self.camera: CameraInput | None = None
+        if self.config.get("CAMERA_INPUT_ON", False):
+            interval = self.config.get("CAMERA_INTERVAL", 10)
+            camera_id = self.config.get("CAMERA_ID", 0)
+            self.camera = CameraInput(interval=interval, camera_id=camera_id)
+            # self.camera.initialize()
+        
+        atexit.register(self._cleanup)
 
     # Initialization methods
 
@@ -233,8 +245,12 @@ class OpenLLMVTuberMain:
         if user_input is None:
             user_input = self.get_user_input()
         elif isinstance(user_input, np.ndarray):
-            print("transcribing...")
-            user_input = self.asr.transcribe_np(user_input)
+            if self.config.get("CAMERA_INPUT_ON", False):
+                print("Processing image...")
+                user_input = self.get_user_input()
+            else:
+                print("transcribing...")
+                user_input = self.asr.transcribe_np(user_input)
 
         if user_input.strip().lower() == self.config.get("EXIT_PHRASE", "exit").lower():
             print("Exiting...")
@@ -261,6 +277,52 @@ class OpenLLMVTuberMain:
 
         print(f"{c[color_code]}Conversation completed.")
         return full_response
+        
+    def process_image(self, image: np.ndarray) -> str:
+        """        
+        Args:
+            image: input image in numpy array format
+        Returns:
+            str: description of the image
+        """
+        generation_params = {
+            #"do_sample": True,
+            "temperature": 0.8,
+            "top_p": 0.95,
+            "top_k": 40,
+            # "max_tokens": max_new_tokens,
+            "num_ctx": 2048,
+            "repeat_penalty": 1.1,
+        }
+        print(f"image shape: {image.shape}")
+
+        # generate a 8-digits random code for the name of the image
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        print(f"current_path: {current_path}")
+        if not os.path.exists(f"{current_path}/images/"):
+            os.makedirs(f"{current_path}/images")
+        random_code = 'lssdf21314kdfcmk3wi' # generate a random code with 8 alphanumeric characters
+
+        image_path = f"{current_path}/images/capture_{random_code}.jpg"
+        cv2.imwrite(image_path, image)
+        print(f"image_path: {image_path}")
+        res = generate(
+            model=self.config.get("VISION_MODEL", "llama3.2-vision"),
+            images=[image_path],
+            # prompt='この画像について日本語で記述し、注意点を教えてください。100文字超えないでください。',
+            # prompt='日本語で100文字以内で今の空間をいきいきとイメージして感性的に描写します。',
+            prompt='Please describe the picture with no more than 100 poet-like words.',
+            options=generation_params
+        )
+        print(f"response: {res['response']}")
+        return res['response']
+
+    def _cleanup(self):
+        """Clean up resources."""
+        self.clean_cache()
+        if self.camera:
+            self.camera.release()
+
 
     def get_user_input(self) -> str:
         """
@@ -272,7 +334,20 @@ class OpenLLMVTuberMain:
         """
         # for live2d with browser, their input are now injected by the server class
         # and they no longer use this method
-        if self.config.get("VOICE_INPUT_ON", False):
+        if self.config.get("CAMERA_INPUT_ON", False):
+            # get image from the camera
+            self.camera.initialize()
+            print("Waiting for next camera frame...")
+            while True:
+                frame = self.camera.get_frame()
+                if frame is not None:
+                    # adjust the image here
+                    self.camera.release() # release the camera
+                    description = self.process_image(frame)
+                    return description
+                time.sleep(0.1)  # short sleep to avoid high CPU usage
+
+        elif self.config.get("VOICE_INPUT_ON", False):
             # get audio from the local microphone
             print("Listening from the microphone...")
             return self.asr.transcribe_with_local_vad()
