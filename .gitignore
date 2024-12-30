@@ -7,7 +7,7 @@ __pycache__/
 lab.py
 .idea
 /images
-
+/dialogues
 # Virtual environment
 .conda
 conda

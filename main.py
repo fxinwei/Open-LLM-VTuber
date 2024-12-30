@@ -202,6 +202,21 @@ class OpenLLMVTuberMain:
 
         return system_prompt
 
+    def save_conversation(self, dialogue: str) -> None:
+        """
+        Store the conversation in the cache folder.
+
+        Parameters:
+        - conversation (str): The conversation to be stored.
+        """
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        cache_dir = f"{current_path}/dialogues"
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+        date_today = time.strftime("%Y-%m-%d")
+        filename = f"{cache_dir}/dialogue_{date_today}.txt"
+        with open(filename, "a", encoding='utf-8-sig') as file:
+            file.write(dialogue)
     # Main conversation methods
 
     def conversation_chain(self, user_input: str | np.ndarray | None = None) -> str:
@@ -257,7 +272,7 @@ class OpenLLMVTuberMain:
             exit()
 
         print(f"User input: {user_input}")
-
+        self.save_conversation(f"[{time.strftime('%H:%M:%S')}] User: {user_input}\n")
         chat_completion: Iterator[str] = self.llm.chat_iter(user_input)
 
         if not self.config.get("TTS_ON", False):
@@ -274,7 +289,7 @@ class OpenLLMVTuberMain:
         full_response = self.speak(chat_completion)
         if self.verbose:
             print(f"\nComplete response: [\n{full_response}\n]")
-
+        self.save_conversation(f"[{time.strftime('%H:%M:%S')}] LLM: {full_response}\n")
         print(f"{c[color_code]}Conversation completed.")
         return full_response
         

@@ -27,7 +27,7 @@ ollama:
   ORGANIZATION_ID: "org_eternity"
   PROJECT_ID: "project_glass"
   ## LLM name
-  MODEL: "gemma-2-2b-jpn-gguf"
+  MODEL: "llama3.3:latest"
   # system prompt is at the very end of this file
   VERBOSE: False
 
@@ -339,7 +339,7 @@ MEMORY_SNAPSHOT: True
 # All persona files are stored as txt in 'prompts/persona' directory. 
 # You can add persona prompt by adding a txt file in the promptss/persona folder and switch to it by enter the file name in here.
 # some options: "en_sarcastic_neuro", "en_nuclear_debate", "zh_翻译腔", "zh_米粒", 
-PERSONA_CHOICE: "jp_vision_test" # or if you rather edit persona prompt below, leave it blank ...
+PERSONA_CHOICE: "jp_shougakusei" # or if you rather edit persona prompt below, leave it blank ...
 
 # This prompt will be used instead if the PERSONA_CHOICE is empty
 DEFAULT_PERSONA_PROMPT_IN_YAML: |
@@ -366,8 +366,4 @@ CHAT_HISTORY_DIR: "./chat_history/"
 # [this feature is currently removed, so useless for now]Turn on RAG (Retrieval Augmented Generation) or not. 
 RAG_ON: False
 LLMASSIST_RAG_ON: False
-
-CAMERA_INPUT_ON: true  # enable camera
-CAMERA_INTERVAL: 10    # shot picture interval
-CAMERA_ID: 0          # camera ID
-VISION_MODEL: "llama3.2-vision" # LLM vision model default llama3.2-vision
+CAMERA_INPUT_ON: false
