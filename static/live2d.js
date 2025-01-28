@@ -1,6 +1,6 @@
 var app, model2;
 var modelInfo, emoMap;
-var pointerInteractionEnabled = true;
+var pointerInteractionEnabled = false;
 
 const live2dModule = (function () {
   const live2d = PIXI.live2d;
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   pointerInteractionBtn.addEventListener('click', function () {
     window.pointerInteractionEnabled = !window.pointerInteractionEnabled;
-    pointerInteractionBtn.textContent = window.pointerInteractionEnabled ? "👀 Pointer Interactive On" : "❌ Pointer Interactive Off";
+    pointerInteractionBtn.textContent = window.pointerInteractionEnabled ? "❌ Pointer Interactive Off" : "👀 Pointer Interactive On";
     model2.interactive = window.pointerInteractionEnabled;
     if (!window.pointerInteractionEnabled) {
       // attempt to reset the pointer interaction

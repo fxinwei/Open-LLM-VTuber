@@ -156,6 +156,83 @@ select:focus {
   background-color: rgba(33, 33, 33, 0.8);
 }
 
+.right-container {
+  position: fixed;
+  right: 2%;
+  top: 10%;
+  bottom: 18%;
+  width: 30%; /* 可根据需要调整宽度 */
+  background-color: rgba(255, 255, 255, 0.6); /* 柔和的背景色 */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* 更深的阴影效果 */
+  border-radius: 16px; /* 更大的圆角 */
+  padding: 1em;
+  box-sizing: border-box;
+  z-index: 1002;
+  overflow: hidden; /* 隐藏超出部分，确保圆角生效 */
+  backdrop-filter: blur(10px); /* 添加模糊效果，让背景更具现代感 */
+}
+
+/* chatBox: 聊天框设计 */
+.chat-box {
+  height: 100%;
+  padding: 6px; /* 内边距增加，增强空间感 */
+  font-size: 16px;
+  line-height: 1.6; /* 行间距优化，便于阅读 */
+  overflow-y: auto; /* 垂直滚动 */
+  border-radius: 12px; /* 圆角设计 */
+  font-weight: bold;  
+  background-color: rgba(171, 134, 134, 0.6); /* 柔和的背景色 */
+  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.05); /* 内阴影 */
+  font-family: "Noto Sans", "Helvetica Neue", Arial, sans-serif; /* 适合中英文的字体 */
+  color: #3b3434; /* 更柔和的文字颜色 */
+}
+
+/* 每条消息的设计 */
+.chat-box .message {
+  margin-bottom: 12px; /* 每条消息的间距 */
+  padding: 12px; /* 消息内部间距 */
+  background-color: #ffffff; /* 消息背景色 */
+  border-radius: 10px; /* 圆角设计 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 阴影效果 */
+  word-break: break-word; /* 长单词自动换行 */
+}
+
+/* 滚动条样式 */
+.chat-box::-webkit-scrollbar {
+  width: 10px; /* 滚动条宽度 */
+}
+
+.chat-box::-webkit-scrollbar-track {
+  background: rgba(240, 240, 240, 0.8); /* 滚动条轨道颜色 */
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.8); /* 滑块颜色 */
+  border-radius: 10px; /* 滑块圆角 */
+}
+
+.chat-box::-webkit-scrollbar-thumb:hover {
+  background: rgba(90, 90, 90, 1); /* 滑块悬停颜色 */
+}
+
+/* 移动设备优化 */
+@media screen and (max-width: 600px) {
+  .right-container {
+    right: 5%; /* 增加边距 */
+    width: 90%; /* 宽度自适应屏幕 */
+    top: 5%; /* 减少顶部边距 */
+    bottom: 5%; /* 减少底部边距 */
+    border-radius: 12px; /* 适当减少圆角 */
+    padding: 10px; /* 减小内边距 */
+  }
+  
+  .chat-box {
+    font-size: 14px; /* 调整字体大小 */
+    line-height: 1.5; /* 行间距 */
+    padding: 8px; /* 减小内边距 */
+  }
+}
+
 .hidden {
     display: none;
 }

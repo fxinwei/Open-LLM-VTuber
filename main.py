@@ -210,7 +210,7 @@ class OpenLLMVTuberMain:
         - conversation (str): The conversation to be stored.
         """
         current_path = os.path.dirname(os.path.abspath(__file__))
-        cache_dir = f"{current_path}/dialogues"
+        cache_dir = f"{current_path}/static/dialogues"
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
         date_today = time.strftime("%Y-%m-%d")
@@ -219,7 +219,7 @@ class OpenLLMVTuberMain:
             file.write(dialogue)
     # Main conversation methods
 
-    def conversation_chain(self, user_input: str | np.ndarray | None = None) -> str:
+    def conversation_chain(self, user_input: str | np.ndarray | None = None) -> tuple[str, str]:
         """
         One iteration of the main conversation.
         1. Get user input (text or audio) if not provided as an argument
@@ -230,7 +230,7 @@ class OpenLLMVTuberMain:
         - user_input (str, numpy array, or None): The user input to be used in the conversation. If it's string, it will be considered as user input. If it's a numpy array, it will be transcribed. If it's None, we'll request input from the user.
 
         Returns:
-        - str: The full response from the LLM
+        - tuple: (The full response from the LLM, chat_history)
         """
 
         if not self._continue_exec_flag.wait(
@@ -272,7 +272,7 @@ class OpenLLMVTuberMain:
             exit()
 
         print(f"User input: {user_input}")
-        self.save_conversation(f"[{time.strftime('%H:%M:%S')}] User: {user_input}\n")
+        user_input_timing = time.strftime('%H:%M:%S')
         chat_completion: Iterator[str] = self.llm.chat_iter(user_input)
 
         if not self.config.get("TTS_ON", False):
@@ -289,9 +289,11 @@ class OpenLLMVTuberMain:
         full_response = self.speak(chat_completion)
         if self.verbose:
             print(f"\nComplete response: [\n{full_response}\n]")
-        self.save_conversation(f"[{time.strftime('%H:%M:%S')}] LLM: {full_response}\n")
+        respond_timing = time.strftime('%H:%M:%S')
         print(f"{c[color_code]}Conversation completed.")
-        return full_response
+        chat_history = f"\n[{user_input_timing}] User: {user_input}\n[{respond_timing}] LLM: {full_response}\n"
+        self.save_conversation(chat_history)
+        return full_response, chat_history
         
     def process_image(self, image: np.ndarray) -> str:
         """        

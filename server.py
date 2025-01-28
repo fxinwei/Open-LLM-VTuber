@@ -255,10 +255,19 @@ class WebSocketServer:
                                         }
                                     )
                                 )
-                                await asyncio.to_thread(
+                                result = await asyncio.to_thread(
                                     open_llm_vtuber.conversation_chain,
                                     user_input=user_input,
                                 )
+                                await websocket.send_text(
+                                    json.dumps(
+                                        {
+                                            "type": "chatbox-content",
+                                            "text": result[1], # send chat_history to frontend
+                                        }
+                                    )
+                                )
+
                                 await websocket.send_text(
                                     json.dumps(
                                         {

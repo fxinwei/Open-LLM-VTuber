@@ -34,21 +34,21 @@
 <body>
     <div class="top-left">
         <button id="wsStatus">Disconnected</button>
-        <button id="stateDisplay">Status: loading</button>
-        <button id="pointerInteractionBtn">👀 Pointer Interactive On</button>
-        <input type="text" id="wsUrl" placeholder="WebSocket URL">
-        <div class="sensitivity-container">
-            <span class="sensitivity-label">Speech Prob. Threshold:</span>
-            <input type="number" id="speechProbThreshold" min="1" max="100" value="97" title="Speech Detection Confidence Level Threshold (%)">
+        <button id="stateDisplay" style="display: none;">Status: loading</button>
+        <button id="pointerInteractionBtn" style="display: none;">👀 Pointer Interactive On</button>
+        <input type="text" id="wsUrl" placeholder="WebSocket URL" style="display: none;">
+        <div class="sensitivity-container" style="display: none;">
+            <span class="sensitivity-label" style="display: none;">Speech Prob. Threshold:</span>
+            <input type="number" id="speechProbThreshold" min="1" max="100" value="97" title="Speech Detection Confidence Level Threshold (%)" style="display: none;">
         </div>
-         <div class="sensitivity-container">
-            <span class="sensitivity-label">Negative Speech Threshold:</span>
+         <div class="sensitivity-container" style="display: none;">
+            <span class="sensitivity-label" style="display: none;">Negative Speech Threshold:</span>
             <input type="number" id="negativeSpeechThreshold" min="0" max="100" value="15"
-                title="Speech detection absence threshold (%)">
+                title="Speech detection absence threshold (%)" style="display: none;">
         </div>
-        <div class="sensitivity-container">
-            <span class="sensitivity-label">Redemption Frames:</span>
-            <input type="number" id="redemptionFrames" min="1" max="100" value="20" title="Number of silent frames to wait before ending speech">
+        <div class="sensitivity-container" style="display: none;">
+            <span class="sensitivity-label" style="display: none;">Redemption Frames:</span>
+            <input type="number" id="redemptionFrames" min="1" max="100" value="20" title="Number of silent frames to wait before ending speech" style="display: none;">
         </div>
         <select id="configDropdown" aria-label="Configuration Selection">
             <option value="">Select Configuration</option>
@@ -59,6 +59,11 @@
     </div>
 
     <canvas id="canvas"></canvas>
+    <div class="right-container">
+        <div id="chatBox" class="chat-box">
+            <!-- 聊天内容将显示在这里 -->
+        </div>
+    </div>
 
     <div class="bottom-container">
         <div class="fixed-bottom">
@@ -333,6 +338,13 @@
                         live2dModule.loadModel(message.text);
                     });
                     break;
+                case "chatbox-content":
+                    // 修改: 更新chatbox内容
+                    document.getElementById("chatBox").innerText += message.text;
+                    // rooling to the bottom of the chat box
+                    document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+                    break;
+
                 case "listExpressions":
                     console.log(listSupportedExpressions());
                     break;
@@ -546,6 +558,39 @@
         // Add this after other event listeners
         const textInput = document.getElementById('textInput');
         const sendText = document.getElementById('sendText');
+
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = currentDate.getDate().toString().padStart(2, '0');
+        const fileName = `/dialogues/dialogue_${year}-${month}-${day}.txt`;
+        
+        // Example usage: Load initial chat content on page load
+        function loadChatContent() {
+            fetch(fileName)
+                .then(response => {
+                    if (!response.ok) {
+                        // 如果文件不存在，返回状态码不是 200，抛出错误
+                        if (response.status === 404) {
+                            console.warn(`File not found: ${fileName}`);
+                            return ''; // 返回空内容
+                        }
+                        throw new Error(`Failed to fetch file: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    // 更新 chatBox 内容
+                    document.getElementById("chatBox").innerText = data;
+                    // 滚动到聊天框底部
+                    const chatBox = document.getElementById("chatBox");
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error loading chat content:', error);
+                });
+        }
+        window.addEventListener('load', loadChatContent);
 
         function handleTextSubmit() {
             const text = textInput.value;

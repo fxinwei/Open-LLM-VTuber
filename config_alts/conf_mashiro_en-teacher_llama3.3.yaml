@@ -27,7 +27,7 @@ ollama:
   ORGANIZATION_ID: "org_eternity"
   PROJECT_ID: "project_glass"
   ## LLM name
-  MODEL: "qwen2.5:32b"
+  MODEL: "deepseek-r1:70b"
   # system prompt is at the very end of this file
   VERBOSE: False
 
@@ -339,7 +339,7 @@ MEMORY_SNAPSHOT: True
 # All persona files are stored as txt in 'prompts/persona' directory. 
 # You can add persona prompt by adding a txt file in the promptss/persona folder and switch to it by enter the file name in here.
 # some options: "en_sarcastic_neuro", "en_nuclear_debate", "zh_翻译腔", "zh_米粒", 
-PERSONA_CHOICE: "zh_jp_teacher" # or if you rather edit persona prompt below, leave it blank ...
+PERSONA_CHOICE: "jp_en_teacher_en" # or if you rather edit persona prompt below, leave it blank ...
 
 # This prompt will be used instead if the PERSONA_CHOICE is empty
 DEFAULT_PERSONA_PROMPT_IN_YAML: |

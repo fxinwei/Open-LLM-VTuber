@@ -47,3 +47,10 @@ openapi_memgpt.json
 # memory log
 mem.json
 conf.yaml.backup
+
+# added by me
+/prompts/persona/*
+!prompts/persona/jp_en_teacher_en.txt
+/config_alts/*
+!config_alts/conf_mashiro_en-teacher_llama3.3.yaml
+/static/dialogues
