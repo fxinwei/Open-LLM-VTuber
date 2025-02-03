@@ -159,8 +159,8 @@ select:focus {
 .right-container {
   position: fixed;
   right: 2%;
-  top: 10%;
-  bottom: 18%;
+  top: 6%;
+  bottom: 24%;
   width: 30%; /* 可根据需要调整宽度 */
   background-color: rgba(255, 255, 255, 0.6); /* 柔和的背景色 */
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* 更深的阴影效果 */

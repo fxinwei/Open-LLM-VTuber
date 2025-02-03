@@ -599,7 +599,7 @@ if __name__ == "__main__":
     atexit.register(WebSocketServer.clean_cache)
 
     # Load configurations from yaml file
-    config = load_config_with_env("conf.yaml")
+    config = load_config_with_env("./config_alts/conf_haru_nurse_llama3.3.yaml")
 
     config["LIVE2D"] = True  # make sure the live2d is enabled
 

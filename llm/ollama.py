@@ -85,7 +85,7 @@ class LLM(LLMInterface):
         print(" -- Model: " + self.model)
         print(" -- System: " + self.system)
 
-    def chat_iter(self, prompt: str) -> Iterator[str]:
+    def chat_iter(self, prompt: str, llm_model_params: dict) -> Iterator[str]:
 
         self.memory.append(
             {
@@ -107,6 +107,7 @@ class LLM(LLMInterface):
                 messages=self.memory,
                 model=self.model,
                 stream=True,
+                **llm_model_params
             )
         except Exception as e:
             print("Error calling the chat endpoint: " + str(e))

@@ -10,7 +10,9 @@ import uuid
 from typing import Callable, Iterator, Optional
 from loguru import logger
 import numpy as np
+import pandas as pd
 import yaml
+import string
 import chardet
 
 import __init__
@@ -60,7 +62,23 @@ class OpenLLMVTuberMain:
         self._continue_exec_flag.set()  # Set the flag to continue execution
         self.session_id: str = str(uuid.uuid4().hex)
         self.heard_sentence: str = ""
-
+        
+        ##  test for LLM model parameters
+        self.conversation_code = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
+        if self.config.get("RANDOMIZE_LLM_PARAMS", False):
+            self.openai_llm_model_params = {
+                "temperature": random.randint(3, 10) / 10,
+                "seed": random.randint(0, 10000),
+                "max_completion_tokens": random.randint(50, 500),
+                "top_p": random.randint(75, 95) / 100,
+            }
+            self.save_conversation(f"\nconversation code: {self.conversation_code}\nparameters: {self.openai_llm_model_params}\n")
+            llm_param_df = pd.read_csv('llm_params.csv', header=0) if os.path.exists('./llm_params.csv') else pd.DataFrame(columns=['llm_id', 'temperature', 'seed', 'max_completion_tokens', 'top_p'])
+            if len(self.openai_llm_model_params) > 0:
+                llm_param_df = llm_param_df._append({**self.openai_llm_model_params, 'llm_id': self.conversation_code}, ignore_index=True)
+                llm_param_df.to_csv('llm_params.csv', index=False)
+        else:
+            self.openai_llm_model_params = self.config.get("LLM_MODEL_PARAMS", {})
         # Init ASR if voice input is on.
         self.asr: ASRInterface | None
         if self.config.get("VOICE_INPUT_ON", False):
@@ -273,7 +291,7 @@ class OpenLLMVTuberMain:
 
         print(f"User input: {user_input}")
         user_input_timing = time.strftime('%H:%M:%S')
-        chat_completion: Iterator[str] = self.llm.chat_iter(user_input)
+        chat_completion: Iterator[str] = self.llm.chat_iter(user_input, self.openai_llm_model_params)
 
         if not self.config.get("TTS_ON", False):
             full_response = ""
@@ -291,7 +309,7 @@ class OpenLLMVTuberMain:
             print(f"\nComplete response: [\n{full_response}\n]")
         respond_timing = time.strftime('%H:%M:%S')
         print(f"{c[color_code]}Conversation completed.")
-        chat_history = f"\n[{user_input_timing}] User: {user_input}\n[{respond_timing}] LLM: {full_response}\n"
+        chat_history = f"\n[{user_input_timing}] User: {user_input}\n[{respond_timing}] LLM{self.conversation_code if self.config.get('RANDOMIZE_LLM_PARAMS', False) else ''}: {full_response}\n"
         self.save_conversation(chat_history)
         return full_response, chat_history
         

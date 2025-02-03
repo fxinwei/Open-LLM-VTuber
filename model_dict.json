@@ -116,5 +116,55 @@
             "optimism": 1,
             "excitement": 6
         }
+    },
+    {
+        "name": "haru",
+        "description": "haru",
+        "url": "live2d-models/haru/haru_greeter_t05.model3.json",
+        "kScale": 0.0003,
+        "initialXshift": 0,
+        "initialYshift": 200,
+        "kXOffset": 1000,
+        "kYOffset": -200,
+        "idleMotionGroupName": "idle",
+        "emotionMap": {
+            "neutral": 0,
+            "curiosity": 4,
+            "pride": 5,
+            "realization": 4,
+            "optimism": 1,
+            "excitement": 6
+        }
+    },
+    {
+        "name": "chitose",
+        "description": "chitose (from kantai collection)",
+        "url": "live2d-models/live2d_models_collection/chitose/chitose.model.json",
+        "kScale": 0.0003,
+        "initialXshift": 0,
+        "initialYshift": -320,
+        "idleMotionGroupName": "idle",
+        "emotionMap": {
+            "neutral": 0,
+            "curiosity": 4,
+            "pride": 5,
+            "realization": 4,
+            "optimism": 1,
+            "excitement": 6
+        }
+    },
+    {
+        "name": "hibiki",
+        "description": "hibiki (from kantai collection)",
+        "url": "/live2d-models/hibiki/hibiki.model3.json",
+        "kScale": 0.12,
+        "initialXshift": 0,
+        "initialYshift": 0,
+        "idleMotionGroupName": "idle",
+        "emotionMap": {
+            "neutral": 0,
+            "excitement": 6
+        }
     }
+
 ]

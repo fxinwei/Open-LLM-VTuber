@@ -51,6 +51,9 @@ conf.yaml.backup
 # added by me
 /prompts/persona/*
 !prompts/persona/jp_en_teacher_en.txt
+!prompts/persona/jp_nurse.txt
 /config_alts/*
-!config_alts/conf_mashiro_en-teacher_llama3.3.yaml
+!config_alts/*en-teacher*.yaml
+!config_alts/*nurse*.yaml
 /static/dialogues
+/live2d-models
