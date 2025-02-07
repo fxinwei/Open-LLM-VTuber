@@ -57,3 +57,4 @@ conf.yaml.backup
 !config_alts/*nurse*.yaml
 /static/dialogues
 /live2d-models
+.llm_params.csv
