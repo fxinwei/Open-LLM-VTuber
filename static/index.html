@@ -56,6 +56,7 @@
         <select id="bgDropdown" aria-label="Background Selection">
             <option value="">Select Background</option>
         </select>
+        <button id="logoutBtn">Logout</button>
     </div>
 
     <canvas id="canvas"></canvas>
@@ -90,6 +91,10 @@
         let fullResponse = ""; // full response from the server in one conversation chain
 
         const stateDisplay = document.getElementById('stateDisplay');
+        
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+        window.location.href = '/auth/logout';
+        });
 
         function updateStateDisplay() {
             stateDisplay.textContent = `Status: ${state}`;

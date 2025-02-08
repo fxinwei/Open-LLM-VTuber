@@ -236,3 +236,25 @@ select:focus {
 .hidden {
     display: none;
 }
+
+#logoutBtn {
+  background-color: #6200ee;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+#logoutBtn:hover {
+  background-color: #3700b3;
+  transform: scale(1.05);
+}
+
+#logoutBtn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(98, 0, 238, 0.4);
+}

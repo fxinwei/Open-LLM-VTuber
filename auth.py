@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import Optional
@@ -83,4 +84,9 @@ async def login(
         expires=1800,
     )
     
+    return response
+@router.get("/logout")
+async def logout(response: Response):
+    response = RedirectResponse(url="/login.html", status_code=302)
+    response.delete_cookie("access_token")
     return response
