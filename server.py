@@ -17,7 +17,12 @@ from main import OpenLLMVTuberMain
 from live2d_model import Live2dModel
 from tts.stream_audio import AudioPayloadPreparer
 import __init__
-
+import auth
+from fastapi import Depends, Request
+from database import get_current_user
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import RedirectResponse
 
 class WebSocketServer:
     """
@@ -47,7 +52,7 @@ class WebSocketServer:
         )
         self.router = APIRouter()
         self.connected_clients: List[WebSocket] = []
-        
+        self.app.include_router(auth.router, prefix="/auth", tags=["authentication"])
         
         self.open_llm_vtuber_main_config = open_llm_vtuber_main_config
 
@@ -390,7 +395,19 @@ class WebSocketServer:
             StaticFiles(directory="live2d-models"),
             name="live2d-models",
         )
-        self.app.mount("/", StaticFiles(directory="./static", html=True), name="static")
+        class AuthMiddleware(BaseHTTPMiddleware):
+            async def dispatch(self, request, call_next):
+                if request.url.path in ["/login.html", "/register.html", "/auth/register", "/auth/token"]:
+                    return await call_next(request)
+                            
+                # 检查cookie中的token
+                token = request.cookies.get("access_token")
+                if not token or not token.startswith("Bearer "):
+                    return RedirectResponse(url="/login.html")
+                            
+                return await call_next(request)        
+        self.app.mount("/", StaticFiles(directory="static", html=True), name="static")
+        self.app.add_middleware(AuthMiddleware)
 
     def run(self, host: str = "127.0.0.1", port: int = 8000, log_level: str = "info"):
         """Runs the FastAPI application using Uvicorn."""
