@@ -96,6 +96,28 @@
         window.location.href = '/auth/logout';
         });
 
+        window.addEventListener('load', () => {
+        const expires_at = localStorage.getItem("expires_at");
+        
+        if (expires_at) {
+            const now = Math.floor(Date.now() / 1000) - 3600 * 9;  // 以 UTC 时间计算
+            const remaining = (parseInt(expires_at) - now) * 1000; // in ms
+            console.log(`Expires at: ${expires_at}`);
+            console.log(`Now: ${now}`);
+            console.log(`Remaining time: ${remaining}`);
+            if (remaining > 0) {
+                setTimeout(() => {
+                    alert("Your session has expired. You will be logged out.");
+                    window.location.href = '/auth/logout';
+                }, remaining);
+            } else {
+                window.location.href = '/auth/logout';
+                alert("Your session has expired. You will be logged out.");
+            }
+        }
+        });
+
+
         function updateStateDisplay() {
             stateDisplay.textContent = `Status: ${state}`;
         }
