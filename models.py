@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from passlib.context import CryptContext
+import uuid
 
 Base = declarative_base()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,3 +30,11 @@ class LoginAttempt(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+class ActiveSession(Base):
+    __tablename__ = "active_sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    login_time = Column(DateTime(timezone=True), server_default=func.now())

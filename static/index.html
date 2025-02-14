@@ -116,6 +116,10 @@
             }
         }
         });
+        // when the webpage is closed, send logout request to the server
+        window.addEventListener("beforeunload", function () {
+            navigator.sendBeacon("/auth/logout");
+        });
 
 
         function updateStateDisplay() {

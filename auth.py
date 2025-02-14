@@ -1,21 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime
 from typing import Optional
 from pydantic import BaseModel
-from models import User, LoginAttempt
-from database import get_db, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from models import User, LoginAttempt, ActiveSession
+from database import get_db, create_access_token, oauth2_scheme, ACCESS_TOKEN_EXPIRE_MINUTES
 import json
 from dotenv import load_dotenv
 import os
+import uuid
+from jose import JWTError, jwt
 
 load_dotenv()
 
 SESSION_EXPIRE_MINUTES = int(os.getenv("SESSION_EXPIRE_MINUTES", "15"))
 MAX_LOGIN_PER_DAY = int(os.getenv("MAX_LOGIN_PER_DAY", "5"))
 VIP_USERS = os.getenv("VIP_USERS", "").split(",")
+MAX_ACTIVE_USERS = int(os.getenv("MAX_ACTIVE_USERS", "4"))
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -80,6 +83,16 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # calculate how many users are currently logged in
+    active_count = db.query(ActiveSession).filter(
+        ActiveSession.user_id > 0
+    ).count()
+    if active_count >= MAX_ACTIVE_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Maximum number of active users reached. Please try later."
+        )
+
     max_logins = MAX_LOGIN_PER_DAY
     since_time = datetime.utcnow() - timedelta(days=1)
     login_count = db.query(LoginAttempt).filter(
@@ -97,9 +110,13 @@ async def login(
     db.add(login_attempt)
     db.commit()
     db.refresh(login_attempt)
+
+    # if successfully logged in
+    session_id = uuid.uuid4().hex
+    token_payload = {"sub": user.username, "session_id": session_id}
     access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data=token_payload, expires_delta=access_token_expires
     )
     now = datetime.utcnow()
     if user.username in VIP_USERS: # vip user's session can be alive for 1 day
@@ -108,6 +125,13 @@ async def login(
         expires_at = int((now + timedelta(minutes=SESSION_EXPIRE_MINUTES)).timestamp())
     expires_in = int(access_token_expires.total_seconds())
     
+    active_session = ActiveSession(
+        user_id=user.id,
+        session_id=session_id,
+        login_time=now
+    )
+    db.add(active_session)
+    db.commit()
     token_data = {
         "access_token": access_token,
         "token_type": "bearer",
@@ -128,8 +152,24 @@ async def login(
     )
     
     return response
-@router.get("/logout")
-async def logout(response: Response):
+@router.api_route("/logout", methods=["GET", "POST"])
+async def logout(response: Response, request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")  # Extract token from cookies
+    session_id = None
+
+    if token:
+        try:
+            payload = jwt.decode(token.split(' ')[1] if ' ' in token else token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+            session_id: str = payload.get("session_id")
+        except JWTError:
+            pass
+
+    if session_id:
+        active_session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
+        if active_session:
+            db.delete(active_session)
+            db.commit()
+
     response = RedirectResponse(url="/login.html", status_code=302)
     response.delete_cookie("access_token")
     return response
