@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta, datetime
 from typing import Optional
 from pydantic import BaseModel
-from models import User
+from models import User, LoginAttempt
 from database import get_db, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 import json
 from dotenv import load_dotenv
@@ -13,7 +13,9 @@ import os
 
 load_dotenv()
 
-SESSION_EXPIRE_MINUTES = int(os.getenv("SESSION_EXPIRE_MINUTES"))
+SESSION_EXPIRE_MINUTES = int(os.getenv("SESSION_EXPIRE_MINUTES", "15"))
+MAX_LOGIN_PER_DAY = int(os.getenv("MAX_LOGIN_PER_DAY", "5"))
+VIP_USERS = os.getenv("VIP_USERS", "").split(",")
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -77,13 +79,33 @@ async def login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    max_logins = MAX_LOGIN_PER_DAY
+    since_time = datetime.utcnow() - timedelta(days=1)
+    login_count = db.query(LoginAttempt).filter(
+        LoginAttempt.user_id == user.id,
+        LoginAttempt.timestamp >= since_time
+    ).count()
     
+    if login_count >= max_logins and user.username not in VIP_USERS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many login attempts. You can only login {max_logins} times in 24 hours."
+        )
+    
+    login_attempt = LoginAttempt(user_id=user.id)
+    db.add(login_attempt)
+    db.commit()
+    db.refresh(login_attempt)
     access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     now = datetime.utcnow()
-    expires_at = int((now + timedelta(minutes=SESSION_EXPIRE_MINUTES)).timestamp())
+    if user.username in VIP_USERS: # vip user's session can be alive for 1 day
+        expires_at = int((now + timedelta(days=1)).timestamp())
+    else:
+        expires_at = int((now + timedelta(minutes=SESSION_EXPIRE_MINUTES)).timestamp())
     expires_in = int(access_token_expires.total_seconds())
     
     token_data = {

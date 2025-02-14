@@ -110,6 +110,17 @@
                 console.error('Error:', error);
             }
         });
+        document.addEventListener("DOMContentLoaded", function () {
+        const warningMessage = localStorage.getItem("session_timeout");
+
+        if (warningMessage) {
+
+            // 清除 `localStorage`，防止刷新页面后仍然显示
+            localStorage.removeItem("session_timeout");
+            alert("You have been logged out due to session timeout.");
+        }
+        });
+
     </script>
 </body>
 </html>

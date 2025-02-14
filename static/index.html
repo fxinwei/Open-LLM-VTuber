@@ -107,12 +107,12 @@
             console.log(`Remaining time: ${remaining}`);
             if (remaining > 0) {
                 setTimeout(() => {
-                    alert("Your session has expired. You will be logged out.");
+                    localStorage.setItem("session_timeout", "Your session has expired.");
                     window.location.href = '/auth/logout';
                 }, remaining);
             } else {
+                localStorage.setItem("session_timeout", "Your session has expired.");
                 window.location.href = '/auth/logout';
-                alert("Your session has expired. You will be logged out.");
             }
         }
         });
