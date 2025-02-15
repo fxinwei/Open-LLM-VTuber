@@ -3,59 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Open-LLM-VTuber</title>
+    <title>Login - LLM-VTuber</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
         }
+
         .login-container {
             background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
             width: 100%;
             max-width: 400px;
+            transition: all 0.3s ease;
         }
+
+        .login-container:hover {
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-weight: 600;
+            text-align: center;
+        }
+
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
+
         label {
             display: block;
             margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 0.9rem;
         }
+
         input {
             width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
             box-sizing: border-box;
+            font-size: 1rem;
+            transition: all 0.2s ease;
         }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+
         button {
             width: 100%;
-            padding: 0.75rem;
-            background-color: #007bff;
+            padding: 0.875rem;
+            background-color: #3498db;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-top: 0.5rem;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        button:not(:disabled):hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
+        button:not(:disabled):active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
         .links {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             text-align: center;
+            font-size: 0.9rem;
         }
+
+        .links a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .links a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
         .error-message {
-            color: red;
+            color: #e53e3e;
             margin-bottom: 1rem;
             display: none;
+            font-size: 0.85rem;
+            padding-top: 0.25rem;
+        }
+
+        .show-password {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .show-password input {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .show-password label {
+            white-space: nowrap;
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: normal;
+            color: #4a5568;
+            cursor: pointer;
+        }
+
+        /* self adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem;
+                width: 90%;
+            }
         }
     </style>
 </head>
@@ -71,20 +166,49 @@
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
+                <div class="show-password">
+                    <input type="checkbox" id="togglePassword">
+                    <label for="togglePassword">Show Password</label>
+                </div>
             </div>
-            <button type="submit">Login</button>
+            <!-- Add the reCAPTCHA with callback attributes -->
+            <div class="g-recaptcha"
+                data-sitekey="6LfHvNcqAAAAAAP_74O2VL_OPgkHe-9tnf4Dkr7O"
+                data-callback="enableLoginButton"
+                data-expired-callback="disableLoginButton"></div>
+            <br/>
+            <!-- Button is disabled by default -->
+            <button type="submit" id="login-button" disabled>Login</button>
         </form>
         <div class="links">
             <p>Don't have an account? <a href="/register.html">Register</a></p>
         </div>
     </div>
     <script>
+        // Callback to enable the login button when captcha is solved
+        function enableLoginButton(token) {
+        document.getElementById('login-button').disabled = false;
+        }
+
+        // Callback to disable the login button if captcha expires
+        function disableLoginButton() {
+        document.getElementById('login-button').disabled = true;
+        }
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('change', function() {
+            const passwordInput = document.getElementById('password');
+            passwordInput.type = this.checked ? 'text' : 'password';
+        });
+        
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new URLSearchParams();
             formData.append('username', document.getElementById('username').value);
             formData.append('password', document.getElementById('password').value);
+            // Get the recaptcha response value
+            const recaptchaResponse = document.querySelector(".g-recaptcha-response").value;
+            formData.append('g-recaptcha-response', recaptchaResponse);
             
             try {
                 const response = await fetch('/auth/token', {
@@ -105,6 +229,9 @@
                     const errorMessage = document.getElementById('error-message');
                     errorMessage.textContent = error.detail;
                     errorMessage.style.display = 'block';
+                    grecaptcha.reset();
+                    // Disable the button again until reCAPTCHA is passed
+                    disableLoginButton();
                 }
             } catch (error) {
                 console.error('Error:', error);

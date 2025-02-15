@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         /* 全局样式 */
         * {
@@ -77,8 +78,37 @@
             transition: background 0.3s;
         }
 
+        button:disabled {
+            background: #ccc; /* grey background */
+            cursor: not-allowed;
+        }
+
         button:hover {
             background: #45a049;
+        }
+        .show-password {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .show-password input {
+            width: auto; 
+            margin: 0;
+            vertical-align: middle;
+        }
+
+        .show-password label {
+            white-space: nowrap;
+            vertical-align: middle;
+            margin: 0;
+        }
+        .error-message {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
         }
 
         /* 链接 */
@@ -118,14 +148,63 @@
                 <input type="email" id="email" required>
             </div>
             <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit">Register</button>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                <div id="password-error" class="error-message">Passwords do not match</div>
+                <div class="show-password">
+                    <input type="checkbox" id="togglePassword">
+                    <label for="togglePassword">Show Password</label>
+                </div>
+            </div>
+            <!-- reCAPTCHA widget with callbacks -->
+            <div class="g-recaptcha"
+                data-sitekey="6LfHvNcqAAAAAAP_74O2VL_OPgkHe-9tnf4Dkr7O"
+                data-callback="enableRegisterButton"
+                data-expired-callback="disableRegisterButton"></div>
+            <br/>
+            <button type="submit" id="register-button" disabled>Register</button>
         </form>
         <p>Already have an account? <a href="login.html">Login</a></p>
     </div>
     <script>
+        // Callback for enabling the register button when captcha is solved
+        function enableRegisterButton(token) {
+            document.getElementById('register-button').disabled = false;
+        }
+        
+        // Callback to disable the register button if captcha expires
+        function disableRegisterButton() {
+            document.getElementById('register-button').disabled = true;
+        }
+        document.getElementById('togglePassword').addEventListener('change', function() {
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const type = this.checked ? 'text' : 'password';
+            passwordInput.type = type;
+            confirmPasswordInput.type = type;
+        });
+
+        document.getElementById('confirmPassword').addEventListener('input', validatePasswords);
+        document.getElementById('password').addEventListener('input', validatePasswords);
+
+        function validatePasswords() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorElement = document.getElementById('password-error');
+            
+            if (confirmPassword && password !== confirmPassword) {
+                errorElement.style.display = 'block';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                return true;
+            }
+        }
+
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -133,16 +212,29 @@
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
 
-            // 简单的输入验证
+            // verify passwords match
+            if (!validatePasswords()) {
+                alert("Passwords do not match!");
+                return;
+            }
+
+            // verify if all fields are filled
             if (!username || !email || !password) {
                 alert("Please fill in all fields.");
+                return;
+            }
+
+            // Retrieve the reCAPTCHA response generated by the widget
+            const recaptchaResponse = document.querySelector('.g-recaptcha-response').value;
+            if (!recaptchaResponse) {
+                alert("Please verify that you are not a robot.");
                 return;
             }
 
             const response = await fetch('/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password })
+                body: JSON.stringify({ username, email, password, recaptcha_token: recaptchaResponse })
             });
 
             if (response.ok) {
@@ -151,6 +243,8 @@
             } else {
                 const errorData = await response.json();
                 alert(`Registration failed: ${errorData.detail || 'Try again.'}`);
+                grecaptcha.reset();
+                disableRegisterButton();
             }
         });
     </script>

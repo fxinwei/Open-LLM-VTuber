@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import os
 import uuid
 from jose import JWTError, jwt
+import requests
 
 load_dotenv()
 
@@ -32,13 +33,29 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
+    recaptcha_token: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+def verify_recaptcha_v2(token: str) -> bool:
+    recaptcha_secret = os.getenv("RECAPTCHA_SECRET")
+    url = "https://www.google.com/recaptcha/api/siteverify"
+    data = {"secret": recaptcha_secret, "response": token}
+    response = requests.post(url, data=data)
+    result = response.json()
+    return result.get("success", False)
 @router.post("/register", response_model=Token)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
+    
+    recaptcha_token = user.dict().pop("recaptcha_token", None)
+    if not recaptcha_token or not verify_recaptcha_v2(recaptcha_token):
+        raise HTTPException(
+            status_code=400,
+            detail="reCAPTCHA verification failed. Are you a robot?"
+        )
+    
     # 检查用户名是否已存在
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
@@ -73,8 +90,17 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 @router.post("/token", response_model=TokenResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    request: Request = None
 ):
+    form = await request.form()
+    recaptcha_token = form.get("g-recaptcha-response")
+    if not recaptcha_token or not verify_recaptcha_v2(recaptcha_token):
+        raise HTTPException(
+            status_code=400,
+            detail="reCAPTCHA verification failed. Please try again."
+        )
+
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not User.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
