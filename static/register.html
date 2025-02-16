@@ -238,7 +238,7 @@
             });
 
             if (response.ok) {
-                alert('Registration successful! Please login.');
+                alert('Please check your email to verify your account.');
                 window.location.href = 'login.html';
             } else {
                 const errorData = await response.json();

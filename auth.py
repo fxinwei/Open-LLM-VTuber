@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from datetime import timedelta, datetime
 from typing import Optional
 from pydantic import BaseModel
-from models import User, LoginAttempt, ActiveSession
+from models import User, LoginAttempt, ActiveSession, RegisteredUser
 from database import get_db, create_access_token, oauth2_scheme, ACCESS_TOKEN_EXPIRE_MINUTES
 import json
 from dotenv import load_dotenv
@@ -56,29 +57,44 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="reCAPTCHA verification failed. Are you a robot?"
         )
     
-    # 检查用户名是否已存在
+    # check if user name is already in use
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
             status_code=400,
             detail="Username already registered"
         )
     
-    # 检查邮箱是否已存在
+    # check if the email is already in use
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(
             status_code=400,
             detail="Email already registered"
         )
-    
-    # 创建新用户
-    db_user = User(
-        username=user.username,
-        email=user.email,
-        hashed_password=User.get_password_hash(user.password)
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+
+    # check if the user is already registered
+    db_user = db.query(RegisteredUser).filter(RegisteredUser.username == user.username).first()
+    # if the user is already registered, use the same verification token to verify the email
+    if db_user:
+        verification_token = db_user.verification_token
+    else:
+        # otherwise, create a new rigistered user
+        verification_token = uuid.uuid4().hex
+        db_user = RegisteredUser(
+            username=user.username,
+            email=user.email,
+            hashed_password=User.get_password_hash(user.password),
+            verification_token=verification_token,
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+
+    verification_link = f"{os.getenv('APP_BASE_URL', 'http://localhost:12393')}/auth/verify?token={verification_token}&user={db_user.username}"
+    if not RegisteredUser.send_verification_email(db_user.email, verification_link):
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send verification email. Please try again later."
+        )
     
     # 创建访问令牌
     access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -100,8 +116,18 @@ async def login(
             status_code=400,
             detail="reCAPTCHA verification failed. Please try again."
         )
+    # support both username and email to login
+    user = db.query(User).filter(or_(User.username == form_data.username, User.email == form_data.username)).first()
+    registered_user = db.query(RegisteredUser).filter(or_(RegisteredUser.username == form_data.username, RegisteredUser.email == form_data.username)).first()
 
-    user = db.query(User).filter(User.username == form_data.username).first()
+    # if the user is registered but not verified the email, raise an exception
+    if registered_user and not registered_user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email not verified. Please verify your email first.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if not user or not User.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -199,3 +225,32 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
     response = RedirectResponse(url="/login.html", status_code=302)
     response.delete_cookie("access_token")
     return response
+
+@router.get("/verify")
+async def verify_email(token: str, user: str, db: Session = Depends(get_db)):
+    # Here, you should retrieve the user by id
+    db_user = db.query(RegisteredUser).filter(RegisteredUser.username == user).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if db_user.verification_token != token:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+    if db_user.is_verified:
+        raise HTTPException(status_code=400, detail="Email already verified. Please login.")
+    db_user.is_verified = True
+    db_user.created_at = datetime.utcnow()
+    db.commit()
+    # after successful verification, create a new User object and save it to the database
+    real_user = User(
+        username=db_user.username,
+        email=db_user.email,
+        hashed_password=db_user.hashed_password,
+        is_verified=True,
+        created_at=datetime.utcnow()
+    )
+    
+      # Make sure your User model includes this field.
+    db.add(real_user)
+    db.commit()
+    db.refresh(real_user)
+    # Optionally, redirect to a login page or a success message.
+    return RedirectResponse(url="/verification-success.html")
