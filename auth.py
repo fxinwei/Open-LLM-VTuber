@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from datetime import timedelta, datetime
 from typing import Optional
 from pydantic import BaseModel
-from models import User, LoginAttempt, ActiveSession, RegisteredUser
+from models import User, LoginAttempt, ActiveSession, RegisteredUser, ResetPasswordUser
 from database import get_db, create_access_token, oauth2_scheme, ACCESS_TOKEN_EXPIRE_MINUTES
 import json
 from dotenv import load_dotenv
@@ -74,11 +74,15 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     # check if the user is already registered
     db_user = db.query(RegisteredUser).filter(RegisteredUser.username == user.username).first()
     # if the user is already registered, use the same verification token to verify the email
+    verification_token = uuid.uuid4().hex
     if db_user:
-        verification_token = db_user.verification_token
+        db_user.verification_token = verification_token
+        db_user.email = user.email
+        db_user.hashed_password = User.get_password_hash(user.password)
+        db_user.created_at = datetime.utcnow()
+        db.commit()
     else:
         # otherwise, create a new rigistered user
-        verification_token = uuid.uuid4().hex
         db_user = RegisteredUser(
             username=user.username,
             email=user.email,
@@ -222,8 +226,8 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
             db.delete(active_session)
             db.commit()
 
-    response = RedirectResponse(url="/login.html", status_code=302)
     response.delete_cookie("access_token")
+    response = RedirectResponse(url="/login.html", status_code=302)
     return response
 
 @router.get("/verify")
@@ -254,3 +258,78 @@ async def verify_email(token: str, user: str, db: Session = Depends(get_db)):
     db.refresh(real_user)
     # Optionally, redirect to a login page or a success message.
     return RedirectResponse(url="/verification-success.html")
+@router.post("/forgot-password")
+async def forgot_password(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    email = data.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    
+    # Find the user by email. Assuming password resets apply to verified users.
+    user = db.query(User).filter(User.email == email).first()
+    # For security, do not reveal if the email exists or not.
+    if not user:
+        return JSONResponse(content={"message": "No user found with that email."})
+    
+    reset_user = db.query(ResetPasswordUser).filter(ResetPasswordUser.email == email).first()
+    reset_token = uuid.uuid4().hex
+    if reset_user:
+        # if the user exists, which means he trys to reset password again, update the token and reset_finished
+        reset_user.reset_token = reset_token
+        reset_user.reset_finished = False
+        reset_user.created_at = datetime.utcnow()
+        db.commit()
+    else:
+        reset_user = ResetPasswordUser(
+            username=user.username,
+            email=user.email,
+            reset_token=reset_token,
+            reset_finished=False,
+            created_at=datetime.utcnow()
+        )
+        db.add(reset_user)
+        db.commit()
+        db.refresh(reset_user)    
+    # Build the reset URL. Adjust APP_BASE_URL as needed.
+    reset_link = f"{os.getenv('APP_BASE_URL', 'http://localhost:12393')}/auth/reset-password?token={reset_token}&user={user.username}"
+    
+    if not ResetPasswordUser.send_reset_email(reset_user.username, reset_user.email, reset_link):
+        raise HTTPException(status_code=500, detail="Failed to send reset email. Please try again later.")
+    
+    return JSONResponse(content={"message": "Check your inbox and follow the link to reset your password."})
+
+@router.get("/reset-password")
+async def reset_password_get(token: str, user: str, db: Session = Depends(get_db)):
+    reset_user = db.query(ResetPasswordUser).filter(ResetPasswordUser.username == user).first()
+    if not reset_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # Check the token and expiration
+    if reset_user.reset_token != token:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+    if reset_user.reset_finished:
+        raise HTTPException(status_code=400, detail="Password reset already completed. Please login.")
+    # Redirect to a static HTML page with a form for entering a new password.
+    # Make sure you create this page under your static folder (e.g., static/reset-password.html)
+    return RedirectResponse(url=f"/reset-password.html?token={token}&user={user}")
+
+@router.post("/reset-password")
+async def reset_password_post(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    token = data.get("token")
+    username = data.get("user")
+    new_password = data.get("new_password")
+    if not (token and username and new_password):
+        raise HTTPException(status_code=400, detail="Missing fields")
+    
+    reset_user = db.query(ResetPasswordUser).filter(ResetPasswordUser.username == username).first()
+    user = db.query(User).filter(User.username == username).first()
+    if not reset_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if reset_user.reset_token != token:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+    
+    # Update the user's password and clear the reset token
+    user.hashed_password = User.get_password_hash(new_password)
+    reset_user.reset_finished = True
+    db.commit()
+    return JSONResponse(content={"message": "Success"})

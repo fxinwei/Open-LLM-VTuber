@@ -397,7 +397,7 @@ class WebSocketServer:
         )
         class AuthMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
-                if request.url.path in ["/login.html", "/verification-success.html", "/register.html", "/auth/verify", "/auth/register", "/auth/token"]:
+                if request.url.path in ["/login.html", "/verification-success.html", "/forgot-password.html", "/reset-password.html", "/reset-success.html", "/register.html", "/auth/reset-password", "/auth/forgot-password", "/auth/verify", "/auth/register", "/auth/token"]:
                     return await call_next(request)
                             
                 # 检查cookie中的token
