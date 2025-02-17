@@ -83,7 +83,10 @@ class ActiveSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String, unique=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    login_time = Column(DateTime(timezone=True), server_default=func.now())
+    login_datetime = Column(DateTime(timezone=True), server_default=func.now())
+    last_active = Column(DateTime(timezone=True), server_default=func.now())
+    logout_datetime = Column(DateTime(timezone=True))
+    expire_datetime = Column(DateTime(timezone=True))
 
 # the user who is registed but not verified yet
 class RegisteredUser(Base):

@@ -93,7 +93,7 @@
         const stateDisplay = document.getElementById('stateDisplay');
         
         document.getElementById('logoutBtn').addEventListener('click', () => {
-        window.location.href = '/auth/logout';
+            window.location.href = 'login.html';
         });
 
         window.addEventListener('load', () => {
@@ -104,7 +104,7 @@
             const remaining = (parseInt(expires_at) - now) * 1000; // in ms
             console.log(`Expires at: ${expires_at}`);
             console.log(`Now: ${now}`);
-            console.log(`Remaining time: ${remaining}`);
+            console.log(`Remaining time: ${remaining / 1000} seconds`);
             if (remaining > 0) {
                 setTimeout(() => {
                     localStorage.setItem("session_timeout", "Your session has expired.");

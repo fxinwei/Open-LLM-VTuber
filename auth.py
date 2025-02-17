@@ -139,6 +139,11 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # when user try to login, remove inactive sessions in the database first
+    db.query(ActiveSession).filter(
+        datetime.utcnow() > ActiveSession.expire_datetime
+    ).delete()
+    db.commit()
     # calculate how many users are currently logged in
     active_count = db.query(ActiveSession).filter(
         ActiveSession.user_id > 0
@@ -184,7 +189,8 @@ async def login(
     active_session = ActiveSession(
         user_id=user.id,
         session_id=session_id,
-        login_time=now
+        login_datetime=now,
+        expire_datetime=now + timedelta(minutes=SESSION_EXPIRE_MINUTES),
     )
     db.add(active_session)
     db.commit()
@@ -223,7 +229,7 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
     if session_id:
         active_session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
         if active_session:
-            db.delete(active_session)
+            active_session.logout_datetime = datetime.utcnow()
             db.commit()
 
     response.delete_cookie("access_token")
