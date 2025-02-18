@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from passlib.context import CryptContext
@@ -58,6 +58,12 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    first_name = Column(String)
+    last_name = Column(String)
+    date_of_birth = Column(Date)
+    country = Column(String)
+    address = Column(String)
+    gender = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_verified = Column(Boolean, default=False)
 
@@ -96,6 +102,12 @@ class RegisteredUser(Base):
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    first_name = Column(String)
+    last_name = Column(String)
+    date_of_birth = Column(Date)
+    country = Column(String)
+    address = Column(String)
+    gender = Column(String)
     verification_token = Column(String)
     is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

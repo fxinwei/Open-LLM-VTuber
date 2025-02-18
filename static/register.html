@@ -21,6 +21,7 @@
             align-items: center;
             height: 100vh;
             background: linear-gradient(to right, #b3b8b3, #8f9692);
+            overflow-y: auto;
         }
 
         /* 容器 */
@@ -32,6 +33,9 @@
             width: 100%;
             max-width: 400px;
             text-align: center;
+            max-height: 95vh; /* limits container height to 90% of viewport */
+            overflow-y: auto; /* adds a scrollbar if the content exceeds the container */
+            margin: 0 auto;
         }
 
         h2 {
@@ -140,6 +144,37 @@
         <h2>Create an Account</h2>
         <form id="registerForm">
             <div class="form-group">
+                <label for="first_name">First Name:</label>
+                <input type="text" id="first_name" required></input>
+            </div>
+            <div class="form-group">
+                <label for="last_name">Last Name:</label>
+                <input type="text" id="last_name" name="last_name" required>
+            </div>
+            <div class="form-group">
+                <label for="dob">Date of Birth:</label>
+                <input type="date" id="dob" name="dob" required>
+            </div>
+            <div class="form-group">
+                <label for="country">Country:</label>
+                <select id="country" name="country" required>
+                  <option value="">Select your country</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" id="address" name="address" required>
+            </div>
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                  <option value="">Select one</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" required>
             </div>
@@ -148,9 +183,12 @@
                 <input type="email" id="email" required>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
-            </div>
+                <div class="guidance-message" id="password-guidance">
+                  * Password must be at least 8 characters and include uppercase, lowercase letters, and a number.
+                </div>
+              </div>                    
             <div class="form-group">
                 <label for="confirmPassword">Confirm Password:</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" required>
@@ -188,15 +226,25 @@
             confirmPasswordInput.type = type;
         });
 
-        document.getElementById('confirmPassword').addEventListener('input', validatePasswords);
-        document.getElementById('password').addEventListener('input', validatePasswords);
+        // check if the password is legal
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
         function validatePasswords() {
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const errorElement = document.getElementById('password-error');
             
-            if (confirmPassword && password !== confirmPassword) {
+            // Check if password meets legal criteria
+            const legalPassword = passwordRegex.test(password);
+            // Check if confirmation matches password
+            const passwordsMatch = password === confirmPassword;
+            
+            if (!legalPassword) {
+                errorElement.textContent = "Password must be at least 8 characters and include uppercase, lowercase letters, and a number.";
+                errorElement.style.display = 'block';
+                return false;
+            } else if (confirmPassword && !passwordsMatch) {
+                errorElement.textContent = "Passwords do not match.";
                 errorElement.style.display = 'block';
                 return false;
             } else {
@@ -204,6 +252,8 @@
                 return true;
             }
         }
+        document.getElementById('confirmPassword').addEventListener('input', validatePasswords);
+        document.getElementById('password').addEventListener('input', validatePasswords);
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -211,15 +261,21 @@
             const username = document.getElementById('username').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
+            const first_name = document.getElementById('first_name').value.trim();
+            const last_name = document.getElementById('last_name').value.trim();
+            const date_of_birth = document.getElementById('dob').value.trim();
+            const country = document.getElementById('country').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const gender = document.getElementById('gender').value.trim();
 
             // verify passwords match
             if (!validatePasswords()) {
-                alert("Passwords do not match!");
+                alert("Illegal password!");
                 return;
             }
 
             // verify if all fields are filled
-            if (!username || !email || !password) {
+            if (!username || !email || !password || !first_name || !last_name || !date_of_birth || !country || !address || !gender) {
                 alert("Please fill in all fields.");
                 return;
             }
@@ -234,7 +290,7 @@
             const response = await fetch('/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, password, recaptcha_token: recaptchaResponse })
+                body: JSON.stringify({ username, email, password, first_name, last_name, date_of_birth, country, address, gender, recaptcha_token: recaptchaResponse })
             });
 
             if (response.ok) {
@@ -247,6 +303,122 @@
                 disableRegisterButton();
             }
         });
+
+        const countries = [
+            { code: 'AF', name: 'Afghanistan' },
+            { code: 'AL', name: 'Albania' },
+            { code: 'DZ', name: 'Algeria' },
+            { code: 'AD', name: 'Andorra' },
+            { code: 'AO', name: 'Angola' },
+            { code: 'AR', name: 'Argentina' },
+            { code: 'AM', name: 'Armenia' },
+            { code: 'AU', name: 'Australia' },
+            { code: 'AT', name: 'Austria' },
+            { code: 'AZ', name: 'Azerbaijan' },
+            { code: 'BH', name: 'Bahrain' },
+            { code: 'BD', name: 'Bangladesh' },
+            { code: 'BY', name: 'Belarus' },
+            { code: 'BE', name: 'Belgium' },
+            { code: 'BZ', name: 'Belize' },
+            { code: 'BJ', name: 'Benin' },
+            { code: 'BT', name: 'Bhutan' },
+            { code: 'BO', name: 'Bolivia' },
+            { code: 'BR', name: 'Brazil' },
+            { code: 'BN', name: 'Brunei' },
+            { code: 'BG', name: 'Bulgaria' },
+            { code: 'KH', name: 'Cambodia' },
+            { code: 'CM', name: 'Cameroon' },
+            { code: 'CA', name: 'Canada' },
+            { code: 'CL', name: 'Chile' },
+            { code: 'CN', name: 'China' },
+            { code: 'CO', name: 'Colombia' },
+            { code: 'HR', name: 'Croatia' },
+            { code: 'CU', name: 'Cuba' },
+            { code: 'CY', name: 'Cyprus' },
+            { code: 'CZ', name: 'Czechia' },
+            { code: 'DK', name: 'Denmark' },
+            { code: 'DJ', name: 'Djibouti' },
+            { code: 'EG', name: 'Egypt' },
+            { code: 'SV', name: 'El Salvador' },
+            { code: 'EE', name: 'Estonia' },
+            { code: 'FI', name: 'Finland' },
+            { code: 'FR', name: 'France' },
+            { code: 'DE', name: 'Germany' },
+            { code: 'GR', name: 'Greece' },
+            { code: 'GT', name: 'Guatemala' },
+            { code: 'HN', name: 'Honduras' },
+            { code: 'HU', name: 'Hungary' },
+            { code: 'IS', name: 'Iceland' },
+            { code: 'IN', name: 'India' },
+            { code: 'ID', name: 'Indonesia' },
+            { code: 'IR', name: 'Iran' },
+            { code: 'IQ', name: 'Iraq' },
+            { code: 'IE', name: 'Ireland' },
+            { code: 'IL', name: 'Israel' },
+            { code: 'IT', name: 'Italy' },
+            { code: 'JM', name: 'Jamaica' },
+            { code: 'JP', name: 'Japan' },
+            { code: 'JO', name: 'Jordan' },
+            { code: 'KZ', name: 'Kazakhstan' },
+            { code: 'KE', name: 'Kenya' },
+            { code: 'KR', name: 'South Korea' },
+            { code: 'KW', name: 'Kuwait' },
+            { code: 'KG', name: 'Kyrgyzstan' },
+            { code: 'LA', name: 'Laos' },
+            { code: 'LV', name: 'Latvia' },
+            { code: 'LB', name: 'Lebanon' },
+            { code: 'LY', name: 'Libya' },
+            { code: 'LT', name: 'Lithuania' },
+            { code: 'LU', name: 'Luxembourg' },
+            { code: 'MY', name: 'Malaysia' },
+            { code: 'MV', name: 'Maldives' },
+            { code: 'MX', name: 'Mexico' },
+            { code: 'MA', name: 'Morocco' },
+            { code: 'NP', name: 'Nepal' },
+            { code: 'NL', name: 'Netherlands' },
+            { code: 'NZ', name: 'New Zealand' },
+            { code: 'NI', name: 'Nicaragua' },
+            { code: 'NG', name: 'Nigeria' },
+            { code: 'NO', name: 'Norway' },
+            { code: 'OM', name: 'Oman' },
+            { code: 'PK', name: 'Pakistan' },
+            { code: 'PA', name: 'Panama' },
+            { code: 'PY', name: 'Paraguay' },
+            { code: 'PE', name: 'Peru' },
+            { code: 'PH', name: 'Philippines' },
+            { code: 'PL', name: 'Poland' },
+            { code: 'PT', name: 'Portugal' },
+            { code: 'QA', name: 'Qatar' },
+            { code: 'RO', name: 'Romania' },
+            { code: 'RU', name: 'Russia' },
+            { code: 'SA', name: 'Saudi Arabia' },
+            { code: 'SG', name: 'Singapore' },
+            { code: 'ZA', name: 'South Africa' },
+            { code: 'ES', name: 'Spain' },
+            { code: 'SE', name: 'Sweden' },
+            { code: 'CH', name: 'Switzerland' },
+            { code: 'SY', name: 'Syria' },
+            { code: 'TW', name: 'Taiwan, Province of China' },
+            { code: 'TH', name: 'Thailand' },
+            { code: 'TR', name: 'Turkey' },
+            { code: 'UA', name: 'Ukraine' },
+            { code: 'AE', name: 'United Arab Emirates' },
+            { code: 'GB', name: 'United Kingdom' },
+            { code: 'US', name: 'United States' },
+            { code: 'VN', name: 'Vietnam' },
+            { code: 'YE', name: 'Yemen' },
+            { code: 'ZW', name: 'Zimbabwe' }
+        ];
+        
+        const countrySelect = document.getElementById("country");
+        countries.forEach(country => {
+            const option = document.createElement("option");
+            option.value = country.code;
+            option.textContent = country.name;
+            countrySelect.appendChild(option);
+        });
+        countrySelect.value = "JP";
+
     </script>
 </body>
 </html>

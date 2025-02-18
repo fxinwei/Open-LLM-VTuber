@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from typing import Optional
 from pydantic import BaseModel
 from models import User, LoginAttempt, ActiveSession, RegisteredUser, ResetPasswordUser
@@ -34,6 +34,12 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
+    first_name: str
+    last_name: str
+    date_of_birth: str
+    country: str
+    address: str
+    gender: str
     recaptcha_token: Optional[str] = None
 
 class Token(BaseModel):
@@ -72,14 +78,22 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         )
 
     # check if the user is already registered
-    db_user = db.query(RegisteredUser).filter(RegisteredUser.username == user.username).first()
+    db_user = db.query(RegisteredUser).filter(RegisteredUser.email == user.email).first()
     # if the user is already registered, use the same verification token to verify the email
     verification_token = uuid.uuid4().hex
     if db_user:
         db_user.verification_token = verification_token
+        db_user.username = user.username
         db_user.email = user.email
         db_user.hashed_password = User.get_password_hash(user.password)
+        db_user.first_name = user.first_name
+        db_user.last_name = user.last_name
+        db_user.date_of_birth = datetime.strptime(user.date_of_birth, '%Y-%m-%d').date()  # Expecting a date string, may need conversion
+        db_user.country = user.country
+        db_user.address = user.address
+        db_user.gender = user.gender
         db_user.created_at = datetime.utcnow()
+        db_user.is_verified = False
         db.commit()
     else:
         # otherwise, create a new rigistered user
@@ -87,6 +101,12 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
             username=user.username,
             email=user.email,
             hashed_password=User.get_password_hash(user.password),
+            first_name=user.first_name,
+            last_name=user.last_name,
+            date_of_birth=datetime.strptime(user.date_of_birth, '%Y-%m-%d').date(),  # conversion may be needed
+            country=user.country,
+            address=user.address,
+            gender=user.gender,
             verification_token=verification_token,
         )
         db.add(db_user)
@@ -255,6 +275,12 @@ async def verify_email(token: str, user: str, db: Session = Depends(get_db)):
         username=db_user.username,
         email=db_user.email,
         hashed_password=db_user.hashed_password,
+        first_name=db_user.first_name,
+        last_name=db_user.last_name,
+        date_of_birth=db_user.date_of_birth,
+        country=db_user.country,
+        address=db_user.address,
+        gender=db_user.gender,
         is_verified=True,
         created_at=datetime.utcnow()
     )
@@ -370,4 +396,4 @@ async def check_session(request: Request, response: Response, db: Session = Depe
             return JSONResponse(content={"message": "Session checked"})
     # if the session id is not found in database, raise an exception
     if not token or not active_session:
-        return JSONResponse(content={"message": "session-timeout"})
+        return JSONResponse(content={"message": "session-not-found"})

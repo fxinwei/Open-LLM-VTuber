@@ -107,6 +107,9 @@
             if (data.message === "session-timeout") {
                 clearInterval(heartbeatIntervalId);
                 window.location.href = 'session-expired.html';
+            } else if (data.message === "session-not-found") {
+                clearInterval(heartbeatIntervalId);
+                window.location.href = 'login.html';
             }
             })
             .catch(err => console.error("Session check error:", err));
