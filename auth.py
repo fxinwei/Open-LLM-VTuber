@@ -200,7 +200,7 @@ async def login(
         data=token_payload, expires_delta=access_token_expires
     )
     now = datetime.utcnow()
-    if user.username in VIP_USERS: # vip user's session can be alive for 1 day
+    if user.username in VIP_USERS or user.vip_level > 0: # vip user's session can be alive for 1 day
         expires_at = int((now + timedelta(days=1)).timestamp())
     else:
         expires_at = int((now + timedelta(minutes=SESSION_EXPIRE_MINUTES)).timestamp())
@@ -251,6 +251,7 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
         active_session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
         if active_session:
             active_session.logout_datetime = datetime.utcnow()
+            db.delete(active_session)
             db.commit()
 
     response = RedirectResponse(url="/login.html", status_code=302)

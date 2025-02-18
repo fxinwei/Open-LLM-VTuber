@@ -66,6 +66,7 @@ class User(Base):
     gender = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_verified = Column(Boolean, default=False)
+    vip_level = Column(Integer, default=0)
 
     
     @staticmethod
