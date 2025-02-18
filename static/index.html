@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM-VTuber</title>
+    <title>AI-Assistant</title>
 
     <!-- pixi live2d dependencies -->
     <!-- Load Cubism and PixiJS -->
@@ -33,7 +33,7 @@
 
 <body>
     <div class="top-left">
-        <button id="wsStatus">Disconnected</button>
+        <button id="wsStatus" disabled>切断済み</button>
         <button id="stateDisplay" style="display: none;">Status: loading</button>
         <button id="pointerInteractionBtn" style="display: none;">👀 Pointer Interactive On</button>
         <input type="text" id="wsUrl" placeholder="WebSocket URL" style="display: none;">
@@ -50,19 +50,19 @@
             <span class="sensitivity-label" style="display: none;">Redemption Frames:</span>
             <input type="number" id="redemptionFrames" min="1" max="100" value="20" title="Number of silent frames to wait before ending speech" style="display: none;">
         </div>
-        <select id="configDropdown" aria-label="Configuration Selection">
+        <select id="configDropdown" style="display: none;" aria-label="Configuration Selection">
             <option value="">Select Configuration</option>
         </select>
-        <select id="bgDropdown" aria-label="Background Selection">
+        <select id="bgDropdown" style="display: none;" aria-label="Background Selection">
             <option value="">Select Background</option>
         </select>
-        <button id="logoutBtn">Logout</button>
+        <button id="logoutBtn">ログアウト</button>
     </div>
 
     <canvas id="canvas"></canvas>
     <div class="right-container">
         <div id="chatBox" class="chat-box">
-            <!-- 聊天内容将显示在这里 -->
+            <!-- chat history will be shown here -->
         </div>
     </div>
 
@@ -72,9 +72,9 @@
             <input type="text" id="textInput" class="hidden" placeholder="Type your message here...">
         </div>
         <div class="control-buttons">
-            <button id="micToggle">🎙️Mic is On</button>
-            <button id="interruptBtn">❌Voice Interruption Off</button>
-            <button id="sendText">📝Show Text Input</button>
+            <button id="micToggle">🎙️マイク: オン</button>
+            <button id="interruptBtn" style="display: none;">❌音声割り込みオフ</button>
+            <button id="sendText">📝テキスト入力を表示</button>
         </div>
     </div>
 
@@ -299,7 +299,7 @@
                 // interrupted = false;
                 setState("idle");
                 console.log("Connected to WebSocket");
-                wsStatus.textContent = "Connected";
+                wsStatus.textContent = "接続済み";
                 wsStatus.classList.add('connected');
                 fetchConfigurations();
                 fetchBackgrounds();
@@ -309,7 +309,7 @@
                 // interrupt = false;
                 setState("idle");
                 console.log("Disconnected from WebSocket");
-                wsStatus.textContent = "Disconnected";
+                wsStatus.textContent = "切断済み";
                 wsStatus.classList.remove('connected');
                 taskQueue.clearQueue();
             };
@@ -561,11 +561,11 @@
                 console.log("Mic start");
                 await myvad.start();
                 micToggleState = true;
-                micToggle.textContent = "🎙️Mic is On";
+                micToggle.textContent = "🎙️マイク: オン";
             } catch (error) {
                 console.error("Failed to start microphone:", error);
                 micToggleState = false;
-                micToggle.textContent = "❌Mic is off";
+                micToggle.textContent = "❌マイク: オフ";
             }
         }
 
@@ -575,12 +575,12 @@
                 myvad.pause();
             }
             micToggleState = false;
-            micToggle.textContent = "❌Mic is off";
+            micToggle.textContent = "❌マイク: オフ";
         }
 
         interruptBtn.addEventListener('click', function () {
             voiceInterruptionOn = !voiceInterruptionOn;
-            interruptBtn.textContent = voiceInterruptionOn ? "🖐️Voice Interruption On" : "❌Voice Interruption Off";
+            interruptBtn.textContent = voiceInterruptionOn ? "🖐️音声割り込みオン" : "❌音声割り込みオフ";
         });
 
         let micToggleState = true;
@@ -650,7 +650,7 @@
         sendText.addEventListener('click', function() {
             textInputVisible = !textInputVisible;
             textInput.classList.toggle('hidden');
-            sendText.textContent = textInputVisible ? "📝Hide Text Input" : "📝Show Text Input";
+            sendText.textContent = textInputVisible ? "📝テキスト入力を非表示" : "📝テキスト入力を表示";
         });
 
         // send text when enter is pressed

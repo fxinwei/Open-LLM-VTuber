@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - LLM-VTuber</title>
+    <title>Login - AI-Assistant</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body {
@@ -156,19 +156,19 @@
 </head>
 <body>
     <div class="login-container">
-        <h2>Login</h2>
+        <h2>ログイン</h2>
         <div id="error-message" class="error-message"></div>
         <form id="login-form">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username">ユーザー名</label>
                 <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">パスワード</label>
                 <input type="password" id="password" name="password" required>
                 <div class="show-password">
                     <input type="checkbox" id="togglePassword">
-                    <label for="togglePassword">Show Password</label>
+                    <label for="togglePassword">パスワードを表示</label>
                 </div>
             </div>
             <!-- Add the reCAPTCHA with callback attributes -->
@@ -178,13 +178,13 @@
                 data-expired-callback="disableLoginButton"></div>
             <br/>
             <!-- Button is disabled by default -->
-            <button type="submit" id="login-button" disabled>Login</button>
+            <button type="submit" id="login-button" disabled>ログイン</button>
         </form>
         <div class="links">
-            <p>Don't have an account? <a href="/register.html">Register</a></p>
+            <p>アカウントをお持ちではありませんか？ <a href="/register.html">登録</a></p>
         </div>
         <div class="links">
-            <p>Forgot your password? <a href="/forgot-password.html">Reset Password</a></p>
+            <p>パスワードをお忘れですか？ <a href="/forgot-password.html">パスワードをリセット</a></p>
         </div>
     </div>
     <script>
@@ -247,7 +247,7 @@
 
             // 清除 `localStorage`，防止刷新页面后仍然显示
             localStorage.removeItem("session_timeout");
-            alert("You have been logged out due to session timeout.");
+            alert("セッションのタイムアウトによりログアウトされました。");
         }
         });
 

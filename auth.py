@@ -60,21 +60,21 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     if not recaptcha_token or not verify_recaptcha_v2(recaptcha_token):
         raise HTTPException(
             status_code=400,
-            detail="reCAPTCHA verification failed. Are you a robot?"
+            detail="reCAPTCHA認証に失敗しました。あなたはロボットですか？"
         )
     
     # check if user name is already in use
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(
             status_code=400,
-            detail="Username already registered"
+            detail="このユーザー名は既に登録されています。"
         )
     
     # check if the email is already in use
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(
             status_code=400,
-            detail="Email already registered"
+            detail="このメールアドレスは既に登録されています。"
         )
 
     # check if the user is already registered
@@ -117,7 +117,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     if not RegisteredUser.send_verification_email(db_user.email, verification_link):
         raise HTTPException(
             status_code=500,
-            detail="Failed to send verification email. Please try again later."
+            detail="確認メールの送信に失敗しました。後でもう一度お試しください。"
         )
     
     # 创建访问令牌
@@ -138,7 +138,7 @@ async def login(
     if not recaptcha_token or not verify_recaptcha_v2(recaptcha_token):
         raise HTTPException(
             status_code=400,
-            detail="reCAPTCHA verification failed. Please try again."
+            detail="reCAPTCHA認証に失敗しました。もう一度お試しください。"
         )
     # support both username and email to login
     user = db.query(User).filter(or_(User.username == form_data.username, User.email == form_data.username)).first()
@@ -148,14 +148,14 @@ async def login(
     if registered_user and not registered_user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email not verified. Please verify your email first.",
+            detail="メールが未認証です。先にメールを認証してください。",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not user or not User.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="ユーザー名またはパスワードが間違っています。",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -171,7 +171,7 @@ async def login(
     if active_count >= MAX_ACTIVE_USERS:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Maximum number of active users reached. Please try later."
+            detail="アクティブユーザーの上限に達しました。後でもう一度お試しください。"
         )
 
     max_logins = MAX_LOGIN_PER_DAY
@@ -184,7 +184,7 @@ async def login(
     if login_count >= max_logins and user.username not in VIP_USERS:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Too many login attempts. You can only login {max_logins} times in 24 hours."
+            detail=f"ログイン試行回数が多すぎます。24時間以内に最大 {max_logins} 回までログインできます。"
         )
     
     login_attempt = LoginAttempt(user_id=user.id)
@@ -210,7 +210,7 @@ async def login(
         user_id=user.id,
         session_id=session_id,
         login_datetime=now,
-        expire_datetime=now + timedelta(minutes=SESSION_EXPIRE_MINUTES),
+        expire_datetime=(now + timedelta(days=1)) if user.username in VIP_USERS else now + timedelta(minutes=SESSION_EXPIRE_MINUTES),
     )
     db.add(active_session)
     db.commit()
@@ -262,11 +262,11 @@ async def verify_email(token: str, user: str, db: Session = Depends(get_db)):
     # Here, you should retrieve the user by id
     db_user = db.query(RegisteredUser).filter(RegisteredUser.username == user).first()
     if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
     if db_user.verification_token != token:
-        raise HTTPException(status_code=400, detail="Invalid verification token")
+        raise HTTPException(status_code=400, detail="無効な確認トークンです")
     if db_user.is_verified:
-        raise HTTPException(status_code=400, detail="Email already verified. Please login.")
+        raise HTTPException(status_code=400, detail="メールは既に認証されています。ログインしてください。")
     db_user.is_verified = True
     db_user.created_at = datetime.utcnow()
     db.commit()
@@ -296,13 +296,13 @@ async def forgot_password(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     email = data.get("email")
     if not email:
-        raise HTTPException(status_code=400, detail="Email is required")
+        raise HTTPException(status_code=400, detail="メールアドレスは必須です")
     
     # Find the user by email. Assuming password resets apply to verified users.
     user = db.query(User).filter(User.email == email).first()
     # For security, do not reveal if the email exists or not.
     if not user:
-        return JSONResponse(content={"message": "No user found with that email."})
+        return JSONResponse(content={"message": "そのメールアドレスのユーザーは見つかりませんでした。"})
     
     reset_user = db.query(ResetPasswordUser).filter(ResetPasswordUser.email == email).first()
     reset_token = uuid.uuid4().hex
@@ -327,20 +327,20 @@ async def forgot_password(request: Request, db: Session = Depends(get_db)):
     reset_link = f"{os.getenv('APP_BASE_URL', 'http://localhost:12393')}/auth/reset-password?token={reset_token}&user={user.username}"
     
     if not ResetPasswordUser.send_reset_email(reset_user.username, reset_user.email, reset_link):
-        raise HTTPException(status_code=500, detail="Failed to send reset email. Please try again later.")
+        raise HTTPException(status_code=500, detail="パスワードリセット用のメールの送信に失敗しました。後でもう一度お試しください。")
     
-    return JSONResponse(content={"message": "Check your inbox and follow the link to reset your password."})
+    return JSONResponse(content={"message": "受信箱を確認し、リンクをクリックしてパスワードをリセットしてください。"})
 
 @router.get("/reset-password")
 async def reset_password_get(token: str, user: str, db: Session = Depends(get_db)):
     reset_user = db.query(ResetPasswordUser).filter(ResetPasswordUser.username == user).first()
     if not reset_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりませんでした。")
     # Check the token and expiration
     if reset_user.reset_token != token:
-        raise HTTPException(status_code=400, detail="Invalid reset token")
+        raise HTTPException(status_code=400, detail="無効なリセットトークンです。")
     if reset_user.reset_finished:
-        raise HTTPException(status_code=400, detail="Password reset already completed. Please login.")
+        raise HTTPException(status_code=400, detail="パスワードのリセットは既に完了しています。ログインしてください。")
     # Redirect to a static HTML page with a form for entering a new password.
     # Make sure you create this page under your static folder (e.g., static/reset-password.html)
     return RedirectResponse(url=f"/reset-password.html?token={token}&user={user}")
@@ -352,14 +352,14 @@ async def reset_password_post(request: Request, db: Session = Depends(get_db)):
     username = data.get("user")
     new_password = data.get("new_password")
     if not (token and username and new_password):
-        raise HTTPException(status_code=400, detail="Missing fields")
+        raise HTTPException(status_code=400, detail="未入力の項目があります。")
     
     reset_user = db.query(ResetPasswordUser).filter(ResetPasswordUser.username == username).first()
     user = db.query(User).filter(User.username == username).first()
     if not reset_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりませんでした。")
     if reset_user.reset_token != token:
-        raise HTTPException(status_code=400, detail="Invalid reset token")
+        raise HTTPException(status_code=400, detail="無効なリセットトークンです。")
     
     # Update the user's password and clear the reset token
     user.hashed_password = User.get_password_hash(new_password)

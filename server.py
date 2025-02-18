@@ -186,7 +186,7 @@ class WebSocketServer:
         async def websocket_endpoint(websocket: WebSocket):
             await websocket.accept()
             await websocket.send_text(
-                json.dumps({"type": "full-text", "text": "Connection established"})
+                json.dumps({"type": "full-text", "text": "まずは挨拶しましょう！"})
             )
 
             self.connected_clients.append(websocket)
@@ -202,7 +202,7 @@ class WebSocketServer:
             received_data_buffer = np.array([])
             # start mic
             await websocket.send_text(
-                json.dumps({"type": "control", "text": "start-mic"})
+                json.dumps({"type": "control", "text": "マイクを開始"})
             )
 
             conversation_task = None
@@ -241,7 +241,7 @@ class WebSocketServer:
                     ):
                         print("Received audio data end from front end.")
                         await websocket.send_text(
-                            json.dumps({"type": "full-text", "text": "Thinking..."})
+                            json.dumps({"type": "full-text", "text": "考え中…"})
                         )
                         if data.get("type") == "text-input":
                             user_input = data.get("text")

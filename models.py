@@ -124,19 +124,21 @@ class RegisteredUser(Base):
             )
 
             SENDER = os.getenv("AWS_SES_SENDER")  # Verified sender email in SES
-            SUBJECT = "Verify your email"
+            SUBJECT = "メールを確認してください"
             BODY_TEXT = f"""\
-            Please verify your email address by clicking the link below:
+            以下のリンクをクリックして、メールアドレスを確認してください：
+            
             {verification_link}
-            If you did not request this email, please ignore it.
+            
+            このメールに心当たりがない場合は、無視してください。
             """
             BODY_HTML = f"""\
             <html>
             <head></head>
             <body>
-                <p>Please verify your email address by clicking the link below:</p>
-                <p><a href="{verification_link}">Verify Email</a></p>
-                <p>If you did not request this email, please ignore it.</p>
+                <p>以下のリンクをクリックして、メールアドレスを確認してください：</p>
+                <p><a href="{verification_link}">メールを確認する</a></p>
+                <p>このメールに心当たりがない場合は、無視してください。</p>
             </body>
             </html>
             """
@@ -172,14 +174,14 @@ class RegisteredUser(Base):
                 return False
             return True
         else:
-            subject = "Verify your email"
+            subject = "メールを確認してください"
             body = f"""\
-            Please your email address by clicking the link below:
+            以下のリンクをクリックして、メールアドレスを確認してください：
 
             {verification_link}
-            
-            You receive this email because you are trying to rigister an account for AI-Assistant application.
-            If you did not request this email, please ignore it.
+
+            このメールは、AIアシスタントアプリケーションのアカウント登録を試みたため送信されました。
+            このメールに心当たりがない場合は、無視してください。
             """
             send_email(recipient_email, subject, body)
             return True
@@ -206,15 +208,15 @@ class ResetPasswordUser(Base):
             )
 
             SENDER = os.getenv("AWS_SES_SENDER")
-            SUBJECT = "Password Reset for LLM-VTuber"
-            BODY_TEXT = f"Please click the link below to reset your password:\n{reset_link}"
+            SUBJECT = "パスワードリセット"
+            BODY_TEXT = f"以下のリンクをクリックして、パスワードをリセットしてください：\n{reset_link}"
             BODY_HTML = f"""
             <html>
             <head></head>
             <body>
-                <p>Your username is: {username}</p>
-                <p>Please click the link below to reset your password:</p>
-                <p><a href="{reset_link}">Reset Password</a></p>
+                <p>あなたのユーザー名は： {username}</p>
+                <p>以下のリンクをクリックして、パスワードをリセットしてください：</p>
+                <p><a href="{reset_link}">パスワードをリセット</a></p>
             </body>
             </html>
             """
@@ -251,15 +253,16 @@ class ResetPasswordUser(Base):
             return True
         else:
             # Send email using SMTP
-            subject = f"Password Reset"
+            subject = f"パスワードをリセット"
             body = f"""
-            Your username is: {username}
-            Please click the link below to reset your password:
+            あなたのユーザー名は：{username}
+
+            以下のリンクをクリックして、パスワードをリセットしてください：
             
             {reset_link}
 
-            You receive this email because you are trying to reset your password for your AI-Assistant application.
-            If you did not request this email, please ignore it.
+            このメールは、AIアシスタントアプリケーションのパスワードリセットを試みたため送信されました。
+            このメールに心当たりがない場合は、無視してください。            
             """
             send_email(recipient_email, subject, body)
 

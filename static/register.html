@@ -5,96 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
-        /* 全局样式 */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        :root {
+        --primary: #4361ee;
+        --primary-dark: #3a56d4;
+        --bg-light: #f8f9fa;
+        --text: #2b2d42;
+        --text-light: #6c757d;
+        --white: #ffffff;
+        --shadow: 0 10px 30px rgba(67, 97, 238, 0.15);
+        }
+
         * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
         }
 
-        /* 页面背景 */
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(to right, #b3b8b3, #8f9692);
-            overflow-y: auto;
+        font-family: 'Poppins', sans-serif;
+        background: var(--bg-light);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
         }
 
-        /* 容器 */
         .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            max-height: 95vh; /* limits container height to 90% of viewport */
-            overflow-y: auto; /* adds a scrollbar if the content exceeds the container */
-            margin: 0 auto;
+        background: var(--white);
+        padding: 3rem;
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        max-width: 480px;
+        width: 100%;
+        animation: fadeIn 0.6s ease-out;
         }
 
-        h2 {
-            margin-bottom: 20px;
-            color: #333;
+        @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 表单组 */
+        h1 {
+        color: var(--text);
+        font-weight: 600;
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        }
+
         .form-group {
-            margin-bottom: 15px;
-            text-align: left;
+        margin-bottom: 1rem;
+        text-align: left;
         }
 
         .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        color: var(--text);
         }
 
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            transition: border-color 0.3s;
+        .form-group input,
+        .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1rem;
         }
 
-        /* 输入框聚焦样式 */
-        .form-group input:focus {
-            border-color: #4CAF50;
-            outline: none;
+        .form-group input:focus,
+        .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
         }
 
-        /* 按钮 */
-        button {
-            width: 100%;
-            padding: 10px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
+        .guidance-message {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        margin-top: 5px;
         }
 
-        button:disabled {
-            background: #ccc; /* grey background */
-            cursor: not-allowed;
+        .error-message {
+        font-size: 0.85rem;
+        color: #f44336;
+        margin-top: 5px;
+        display: none;
         }
-
-        button:hover {
-            background: #45a049;
-        }
-        .show-password {
+          .show-password {
             display: flex;
             align-items: center;
             gap: 6px;
             margin-top: 6px;
+            font-size: 13px;
         }
 
         .show-password input {
@@ -108,21 +117,36 @@
             vertical-align: middle;
             margin: 0;
         }
-        .error-message {
-            color: #f44336;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+            font-size: 1rem;
         }
 
-        /* 链接 */
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(67, 97, 238, 0.2);
+        }
+
         p {
-            margin-top: 10px;
-            font-size: 14px;
+            margin-top: 1rem;
+            font-size: 1rem;
+            text-align: center;
+            color: var(--text-light);
         }
 
         p a {
-            color: #4CAF50;
+            color: var(--primary);
             text-decoration: none;
         }
 
@@ -130,72 +154,74 @@
             text-decoration: underline;
         }
 
-        /* 响应式设计 */
-        @media screen and (max-width: 500px) {
+        @media (max-width: 576px) {
             .container {
-                width: 90%;
-                padding: 15px;
+            padding: 2rem;
+            }
+
+            h1 {
+            font-size: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Create an Account</h2>
+        <h2>アカウントを作成</h2>
         <form id="registerForm">
             <div class="form-group">
-                <label for="first_name">First Name:</label>
-                <input type="text" id="first_name" required></input>
-            </div>
-            <div class="form-group">
-                <label for="last_name">Last Name:</label>
+                <label for="last_name">姓:</label>
                 <input type="text" id="last_name" name="last_name" required>
             </div>
             <div class="form-group">
-                <label for="dob">Date of Birth:</label>
+                <label for="first_name">名:</label>
+                <input type="text" id="first_name" required></input>
+            </div>
+            <div class="form-group">
+                <label for="dob">生年月日:</label>
                 <input type="date" id="dob" name="dob" required>
             </div>
             <div class="form-group">
-                <label for="country">Country:</label>
+                <label for="country">国:</label>
                 <select id="country" name="country" required>
-                  <option value="">Select your country</option>
+                  <option value="">国を選択する</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="address">Address:</label>
+                <label for="address">住所:</label>
                 <input type="text" id="address" name="address" required>
             </div>
             <div class="form-group">
-                <label for="gender">Gender:</label>
+                <label for="gender">性別:</label>
                 <select id="gender" name="gender" required>
-                  <option value="">Select one</option>
-                  <option value="female">Female</option>
-                  <option value="male">Male</option>
-                  <option value="other">Other</option>
+                  <option value="">選択する</option>
+                  <option value="female">女性</option>
+                  <option value="male">男性</option>
+                  <option value="other">秘密</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="username">Username:</label>
+                <label for="username">ユーザー名:</label>
                 <input type="text" id="username" required>
             </div>
             <div class="form-group">
-                <label for="email">Email:</label>
+                <label for="email">メールアドレス:</label>
                 <input type="email" id="email" required>
             </div>
             <div class="form-group">
-                <label for="password">Password:</label>
+                <label for="password">パスワード:</label>
                 <input type="password" id="password" name="password" required>
                 <div class="guidance-message" id="password-guidance">
-                  * Password must be at least 8 characters and include uppercase, lowercase letters, and a number.
+                  * パスワードは8文字以上で、大文字、小文字、数字を含める必要があります
                 </div>
               </div>                    
             <div class="form-group">
-                <label for="confirmPassword">Confirm Password:</label>
+                <label for="confirmPassword">パスワードの確認:</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" required>
-                <div id="password-error" class="error-message">Passwords do not match</div>
+                <div id="password-error" class="error-message">パスワードが一致しません</div>
                 <div class="show-password">
                     <input type="checkbox" id="togglePassword">
-                    <label for="togglePassword">Show Password</label>
+                    <label for="togglePassword">パスワードを表示</label>
                 </div>
             </div>
             <!-- reCAPTCHA widget with callbacks -->
@@ -204,9 +230,9 @@
                 data-callback="enableRegisterButton"
                 data-expired-callback="disableRegisterButton"></div>
             <br/>
-            <button type="submit" id="register-button" disabled>Register</button>
+            <button type="submit" id="register-button" disabled>登録</button>
         </form>
-        <p>Already have an account? <a href="login.html">Login</a></p>
+        <p>すでにアカウントをお持ちですか？<a href="login.html">ログイン</a></p>
     </div>
     <script>
         // Callback for enabling the register button when captcha is solved
