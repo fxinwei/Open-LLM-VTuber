@@ -198,7 +198,7 @@ async def login(
         "access_token": access_token,
         "token_type": "bearer",
         "expires_in": expires_in,
-        "expires_at": expires_at
+        "expires_at": expires_at + 30
     }
     # 设置cookie
     response = Response(
@@ -211,6 +211,7 @@ async def login(
         httponly=True,
         max_age=expires_in,
         expires=expires_in,
+        secure=True,
     )
     
     return response
@@ -232,8 +233,8 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
             active_session.logout_datetime = datetime.utcnow()
             db.commit()
 
-    response.delete_cookie("access_token")
     response = RedirectResponse(url="/login.html", status_code=302)
+    response.delete_cookie("access_token")
     return response
 
 @router.get("/verify")
@@ -339,3 +340,34 @@ async def reset_password_post(request: Request, db: Session = Depends(get_db)):
     reset_user.reset_finished = True
     db.commit()
     return JSONResponse(content={"message": "Success"})
+
+@router.post("/checksession")
+async def check_session(request: Request, response: Response, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    session_id = None
+
+    if token:
+        try:
+            payload = jwt.decode(token.split(' ')[1] if ' ' in token else token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+            session_id: str = payload.get("session_id")
+        except JWTError:
+            pass
+
+    if session_id:
+        active_session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
+        print(f"current session_id: {session_id}\nactive_session: {active_session}")
+        if active_session:
+            # if the session is expired, delete it and raise an exception
+            if datetime.utcnow().timestamp() > active_session.expire_datetime.timestamp():
+                db.delete(active_session)
+                db.commit()
+                # raise HTTPException(status_code=401, detail="Session Expired")
+                
+                return JSONResponse(content={"message": "session-timeout"})
+            else:
+                active_session.last_active = datetime.utcnow()
+                db.commit()
+            return JSONResponse(content={"message": "Session checked"})
+    # if the session id is not found in database, raise an exception
+    if not token or not active_session:
+        return JSONResponse(content={"message": "session-timeout"})

@@ -96,27 +96,29 @@
             window.location.href = 'login.html';
         });
 
-        window.addEventListener('load', () => {
-        const expires_at = localStorage.getItem("expires_at");
-        
-        if (expires_at) {
-            const now = Math.floor(Date.now() / 1000) - 3600 * 9;  // 以 UTC 时间计算
-            const remaining = (parseInt(expires_at) - now) * 1000; // in ms
-            console.log(`Expires at: ${expires_at}`);
-            console.log(`Now: ${now}`);
-            console.log(`Remaining time: ${remaining / 1000} seconds`);
-            if (remaining > 0) {
-                setTimeout(() => {
-                    localStorage.setItem("session_timeout", "Your session has expired.");
-                    window.location.href = '/auth/logout';
-                }, remaining);
-            } else {
-                localStorage.setItem("session_timeout", "Your session has expired.");
-                window.location.href = '/auth/logout';
+        function checkSession() {
+            fetch('/auth/checksession', {
+            method: 'POST',
+            credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+            console.log("Session check response:", data);
+            if (data.message === "session-timeout") {
+                clearInterval(heartbeatIntervalId);
+                window.location.href = 'session-expired.html';
             }
+            })
+            .catch(err => console.error("Session check error:", err));
         }
-        });
-        // when the webpage is closed, send logout request to the server
+
+        // Do an immediate check when the page loads.
+        checkSession();
+
+        // Then every 30 seconds do a session check.
+        let heartbeatIntervalId = setInterval(checkSession, 60000);
+        
+        // when the webpage is closed or redirected, send logout request to the server
         window.addEventListener("beforeunload", function () {
             navigator.sendBeacon("/auth/logout");
         });
