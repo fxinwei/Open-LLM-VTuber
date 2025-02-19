@@ -202,7 +202,7 @@ class WebSocketServer:
             received_data_buffer = np.array([])
             # start mic
             await websocket.send_text(
-                json.dumps({"type": "control", "text": "マイクを開始"})
+                json.dumps({"type": "control", "text": "start-mic"})
             )
 
             conversation_task = None

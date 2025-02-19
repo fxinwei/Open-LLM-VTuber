@@ -82,8 +82,9 @@ class LoginAttempt(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-
+    session_id = Column(String, unique=True, index=True)
+    login_datetime = Column(DateTime(timezone=True), server_default=func.now())
+    logout_datetime = Column(DateTime(timezone=True))
 class ActiveSession(Base):
     __tablename__ = "active_sessions"
     
@@ -92,7 +93,6 @@ class ActiveSession(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     login_datetime = Column(DateTime(timezone=True), server_default=func.now())
     last_active = Column(DateTime(timezone=True), server_default=func.now())
-    logout_datetime = Column(DateTime(timezone=True))
     expire_datetime = Column(DateTime(timezone=True))
 
 # the user who is registed but not verified yet

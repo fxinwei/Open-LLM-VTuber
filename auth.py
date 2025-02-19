@@ -148,7 +148,7 @@ async def login(
     if registered_user and not registered_user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="メールが未認証です。先にメールを認証してください。",
+            detail="受信箱を確認し、メール認証プロセスを完了してください。",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -159,6 +159,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    is_vip_user = user.username in VIP_USERS or user.vip_level > 0
     # when user try to login, remove inactive sessions in the database first
     db.query(ActiveSession).filter(
         datetime.utcnow() > ActiveSession.expire_datetime
@@ -178,39 +179,40 @@ async def login(
     since_time = datetime.utcnow() - timedelta(days=1)
     login_count = db.query(LoginAttempt).filter(
         LoginAttempt.user_id == user.id,
-        LoginAttempt.timestamp >= since_time
+        LoginAttempt.login_datetime >= since_time
     ).count()
     
-    if login_count >= max_logins and user.username not in VIP_USERS:
+    if login_count >= max_logins and not is_vip_user: # if the user is not vip, check if they have reached the maximum login attempts
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"ログイン試行回数が多すぎます。24時間以内に最大 {max_logins} 回までログインできます。"
         )
+    # if successfully logged in
+    session_id = uuid.uuid4().hex
     
-    login_attempt = LoginAttempt(user_id=user.id)
+    login_attempt = LoginAttempt(user_id=user.id, session_id=session_id, login_datetime=datetime.utcnow())
     db.add(login_attempt)
     db.commit()
     db.refresh(login_attempt)
 
-    # if successfully logged in
-    session_id = uuid.uuid4().hex
     token_payload = {"sub": user.username, "session_id": session_id}
     access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
     access_token = create_access_token(
         data=token_payload, expires_delta=access_token_expires
     )
     now = datetime.utcnow()
-    if user.username in VIP_USERS or user.vip_level > 0: # vip user's session can be alive for 1 day
-        expires_at = int((now + timedelta(days=1)).timestamp())
+    if is_vip_user: # vip user's session can be alive for 1 day
+        expires_at_datetime = now + timedelta(days=1)
     else:
-        expires_at = int((now + timedelta(minutes=SESSION_EXPIRE_MINUTES)).timestamp())
+        expires_at_datetime = now + timedelta(minutes=SESSION_EXPIRE_MINUTES)
+    expires_at = int(expires_at_datetime.timestamp())
     expires_in = int(access_token_expires.total_seconds())
     
     active_session = ActiveSession(
         user_id=user.id,
         session_id=session_id,
         login_datetime=now,
-        expire_datetime=(now + timedelta(days=1)) if user.username in VIP_USERS else now + timedelta(minutes=SESSION_EXPIRE_MINUTES),
+        expire_datetime=expires_at_datetime,
     )
     db.add(active_session)
     db.commit()
@@ -249,8 +251,9 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
 
     if session_id:
         active_session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
+        login_session = db.query(LoginAttempt).filter(LoginAttempt.session_id == session_id).first()
         if active_session:
-            active_session.logout_datetime = datetime.utcnow()
+            login_session.logout_datetime = datetime.utcnow()
             db.delete(active_session)
             db.commit()
 
