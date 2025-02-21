@@ -64,8 +64,9 @@ class OpenLLMVTuberMain:
         self.heard_sentence: str = ""
         
         ##  test for LLM model parameters
-        self.conversation_code = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
         if self.config.get("RANDOMIZE_LLM_PARAMS", False):
+            random.seed(int(time.time()))
+            self.conversation_code = ''.join(random.choices(string.ascii_letters + string.digits, k=4))
             self.openai_llm_model_params = {
                 "temperature": random.randint(3, 10) / 10,
                 "seed": random.randint(0, 10000),
@@ -309,7 +310,7 @@ class OpenLLMVTuberMain:
             print(f"\nComplete response: [\n{full_response}\n]")
         respond_timing = time.strftime('%H:%M:%S')
         print(f"{c[color_code]}Conversation completed.")
-        chat_history = f"\n[{user_input_timing}] User: {user_input}\n[{respond_timing}] LLM{self.conversation_code if self.config.get('RANDOMIZE_LLM_PARAMS', False) else ''}: {full_response}\n"
+        chat_history = f"\n[{user_input_timing}] User: {user_input}\n[{respond_timing}] LLM_{self.conversation_code if self.config.get('RANDOMIZE_LLM_PARAMS', False) else ''}: {full_response}\n"
         self.save_conversation(chat_history)
         return full_response, chat_history
         

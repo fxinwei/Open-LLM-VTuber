@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Body
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
@@ -6,8 +6,8 @@ from sqlalchemy import or_
 from datetime import timedelta, datetime, date
 from typing import Optional
 from pydantic import BaseModel
-from models import User, LoginAttempt, ActiveSession, RegisteredUser, ResetPasswordUser
-from database import get_db, create_access_token, oauth2_scheme, ACCESS_TOKEN_EXPIRE_MINUTES
+from models import User, LoginAttempt, ActiveSession, RegisteredUser, ResetPasswordUser, ConversationRecord
+from database import get_db, analyze_conversation, get_current_user, create_access_token, oauth2_scheme, ACCESS_TOKEN_EXPIRE_MINUTES
 import json
 from dotenv import load_dotenv
 import os
@@ -169,7 +169,8 @@ async def login(
     active_count = db.query(ActiveSession).filter(
         ActiveSession.user_id > 0
     ).count()
-    if active_count >= MAX_ACTIVE_USERS:
+    # if the user is not manager, reject login if the number of active users reach MAX_ACTIVE_USERS
+    if active_count >= MAX_ACTIVE_USERS and user.vip_level < 999:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="アクティブユーザーの上限に達しました。後でもう一度お試しください。"
@@ -188,7 +189,7 @@ async def login(
             detail=f"ログイン試行回数が多すぎます。24時間以内に最大 {max_logins} 回までログインできます。"
         )
     # if successfully logged in
-    session_id = uuid.uuid4().hex
+    session_id = uuid.uuid4().hex + str(int(datetime.utcnow().timestamp()))
     
     login_attempt = LoginAttempt(user_id=user.id, session_id=session_id, login_datetime=datetime.utcnow())
     db.add(login_attempt)
@@ -196,7 +197,7 @@ async def login(
     db.refresh(login_attempt)
 
     token_payload = {"sub": user.username, "session_id": session_id}
-    access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+    access_token_expires = timedelta(days=1) if is_vip_user else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data=token_payload, expires_delta=access_token_expires
     )
@@ -256,6 +257,8 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
             login_session.logout_datetime = datetime.utcnow()
             db.delete(active_session)
             db.commit()
+        # when user logout, analyze the conversation and save it to database
+        analyze_conversation(session_id, db)
 
     response = RedirectResponse(url="/login.html", status_code=302)
     response.delete_cookie("access_token")
@@ -385,7 +388,7 @@ async def check_session(request: Request, response: Response, db: Session = Depe
 
     if session_id:
         active_session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
-        print(f"current session_id: {session_id}\nactive_session: {active_session}")
+        # print(f"current session_id: {session_id}\nactive_session: {active_session}")
         if active_session:
             # if the session is expired, delete it and raise an exception
             if datetime.utcnow().timestamp() > active_session.expire_datetime.timestamp():
@@ -401,3 +404,35 @@ async def check_session(request: Request, response: Response, db: Session = Depe
     # if the session id is not found in database, raise an exception
     if not token or not active_session:
         return JSONResponse(content={"message": "session-not-found"})
+    
+@router.post("/save_conversation")
+async def save_chat(request: Request, message: dict = Body(...), db: Session = Depends(get_db)):
+    # Expecting the JSON body to contain {"message": "your message content", "user_id": optional }
+    token = request.cookies.get("access_token")  # Extract token from cookies
+    session_id = None
+
+    if token:
+        try:
+            payload = jwt.decode(token.split(' ')[1] if ' ' in token else token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+            session_id: str = payload.get("session_id")
+            username: str = payload.get("sub")
+        except JWTError:
+            pass
+
+    if session_id and username:
+        conversion = db.query(ConversationRecord).filter(ConversationRecord.session_id == session_id).first()
+        if conversion:
+            conversion.data += message.get("message")
+            db.commit()
+            return {"status": "updated", "message": f"updated conversation {conversion.id}"}
+        else:
+            conversion = ConversationRecord(
+                session_id=session_id,
+                username=username,
+                data=message.get("message")
+            )
+            db.add(conversion)
+            db.commit()
+            db.refresh(conversion)
+            return {"status": "updated", "message": f"created conversation {conversion.id}"}
+    return {"status": "failed", "message": "session or username not found"}

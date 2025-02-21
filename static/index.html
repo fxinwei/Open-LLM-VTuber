@@ -201,7 +201,7 @@
                     if (state === "interrupted") {
                         state = "idle";
                     }
-                    document.getElementById("message").textContent = "The LLM can't hear you.";
+                    document.getElementById("message").textContent = "音がはっきり聞こえませんので、もう一度お願いします。";
                 },
                 onSpeechEnd: (audio) => {
                     // audio: (Float32Array of audio samples at sample rate 16000)...
@@ -379,6 +379,20 @@
                     document.getElementById("chatBox").innerText += message.text;
                     // rooling to the bottom of the chat box
                     document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+                    // save conversation data when new data is received
+                    fetch('/auth/save_conversation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: message.text })
+                    }).then(response => response.json())
+                    .then(data => {
+                        console.log("Chat saved:", data);
+                    }).catch(error => {
+                        console.error("Error saving chat:", error);
+                    });
+
                     break;
 
                 case "listExpressions":

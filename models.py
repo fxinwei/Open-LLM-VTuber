@@ -95,6 +95,17 @@ class ActiveSession(Base):
     last_active = Column(DateTime(timezone=True), server_default=func.now())
     expire_datetime = Column(DateTime(timezone=True))
 
+class ConversationRecord(Base):
+    __tablename__ = "conversation_record"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, ForeignKey("users.username"), nullable=False)
+    session_id = Column(String, unique=True, index=True)
+    process_start_datetime = Column(DateTime(timezone=True))
+    process_end_datetime = Column(DateTime(timezone=True))
+    data = Column(String)
+    data_analyzed = Column(String)
+
 # the user who is registed but not verified yet
 class RegisteredUser(Base):
     __tablename__ = "registered_users"
