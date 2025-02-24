@@ -79,7 +79,7 @@ class OpenLLMVTuberMain:
                 llm_param_df = llm_param_df._append({**self.openai_llm_model_params, 'llm_id': self.conversation_code}, ignore_index=True)
                 llm_param_df.to_csv('llm_params.csv', index=False)
         else:
-            self.openai_llm_model_params = self.config.get("LLM_MODEL_PARAMS", {})
+            self.openai_llm_model_params = {'temperature': 0.6, 'seed': 6573, 'max_completion_tokens': 231, 'top_p': 0.88} #self.config.get("LLM_MODEL_PARAMS", {})
         # Init ASR if voice input is on.
         self.asr: ASRInterface | None
         if self.config.get("VOICE_INPUT_ON", False):
@@ -210,10 +210,10 @@ class OpenLLMVTuberMain:
         else:
             system_prompt = self.config.get("DEFAULT_PERSONA_PROMPT_IN_YAML")
 
-        if self.live2d is not None:
-            system_prompt += prompt_loader.load_util(
-                self.config.get("LIVE2D_Expression_Prompt")
-            ).replace("[<insert_emomap_keys>]", self.live2d.emo_str)
+        # if self.live2d is not None:
+        #     system_prompt += prompt_loader.load_util(
+        #         self.config.get("LIVE2D_Expression_Prompt")
+        #     ).replace("[<insert_emomap_keys>]", self.live2d.emo_str)
 
         if self.verbose:
             print("\n === System Prompt ===")
@@ -310,8 +310,8 @@ class OpenLLMVTuberMain:
             print(f"\nComplete response: [\n{full_response}\n]")
         respond_timing = time.strftime('%H:%M:%S')
         print(f"{c[color_code]}Conversation completed.")
-        chat_history = f"\n[{user_input_timing}] User: {user_input}\n[{respond_timing}] LLM_{self.conversation_code if self.config.get('RANDOMIZE_LLM_PARAMS', False) else ''}: {full_response}\n"
-        self.save_conversation(chat_history)
+        chat_history = f"\n[{user_input_timing}] User: {user_input}\n[{respond_timing}] LLM{'_' + self.conversation_code if self.config.get('RANDOMIZE_LLM_PARAMS', False) else ''}: {full_response}\n"
+        # self.save_conversation(chat_history)
         return full_response, chat_history
         
     def process_image(self, image: np.ndarray) -> str:

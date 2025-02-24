@@ -10,11 +10,14 @@ import os
 from dotenv import load_dotenv
 from fastapi import Request
 from sqlalchemy.orm import Session
-from models import Base, ConversationRecord
+from models import Base, ConversationRecord, User
 from ollama import generate
 from pydantic import BaseModel
 import json
 from json import JSONDecodeError
+import pandas as pd
+import shutil
+from openpyxl import load_workbook
 load_dotenv()
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
@@ -79,6 +82,20 @@ class Summary(BaseModel):
     立位保持: str
     転倒リスク: str
 
+def write_excel(template_path, base_dict, username, session_id, start_row, start_col):
+
+    new_excel_path = f"/home/nt/Documents/my_repo/Open-LLM-VTuber/static/dialogues/inteku_{username}_{session_id}.xlsx"
+    shutil.copy(template_path, new_excel_path)
+    book = load_workbook(new_excel_path)
+
+    sheet_name = "sheet1"
+    sheet = book[sheet_name]
+    df = pd.DataFrame(list(base_dict.values()), columns=['状態'])    
+
+    with pd.ExcelWriter(new_excel_path, engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
+        df.to_excel(writer, sheet_name=sheet_name, startrow=start_row-1, startcol=start_col-1, index=False, header=False)
+
+    # df_new = pd.read_excel(new_excel_path, sheet_name=sheet_name)    
 def analyze_conversation(session_id: str, db: Session = Depends(get_db)):
 
     session = db.query(ConversationRecord).filter(ConversationRecord.session_id == session_id).first()
@@ -166,5 +183,17 @@ def analyze_conversation(session_id: str, db: Session = Depends(get_db)):
             output = json.dumps(base_dict, ensure_ascii=False, indent=2)
             session.data_analyzed = output_info + output if output_info else output
             session.process_end_datetime = datetime.utcnow()
+            # write to excel file
+            excel_template_path = "/home/nt/Documents/my_repo/Open-LLM-VTuber/static/dialogues/inteku_template.xlsx"
+            current_user = db.query(User).filter(User.username == session.username).first()
+            write_excel(
+                template_path=excel_template_path,
+                base_dict=base_dict,
+                username=current_user.last_name +'-'+ current_user.first_name,
+                session_id=session_id,
+                start_row=16,
+                start_col=5
+            )
+
             print(f"session {session_id} finish to process conversation\nresult:\n{output}")
             db.commit()

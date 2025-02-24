@@ -52,9 +52,12 @@ conf.yaml.backup
 /prompts/persona/*
 !prompts/persona/jp_en_teacher_en.txt
 !prompts/persona/jp_nurse.txt
+!prompts/persona/jp_odanobunaga.txt
 /config_alts/*
 !config_alts/*en-teacher*.yaml
 !config_alts/*nurse*.yaml
+!config_alts/*nobunaga*
 /static/dialogues
 /live2d-models
 llm_params.csv
+/static/voice
