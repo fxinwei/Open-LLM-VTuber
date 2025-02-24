@@ -258,7 +258,7 @@ async def logout(response: Response, request: Request, db: Session = Depends(get
             db.delete(active_session)
             db.commit()
         # when user logout, analyze the conversation and save it to database
-        analyze_conversation(session_id, db)
+        # analyze_conversation(session_id, db)
 
     response = RedirectResponse(url="/login.html", status_code=302)
     response.delete_cookie("access_token")
