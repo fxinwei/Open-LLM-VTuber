@@ -27,7 +27,7 @@ ollama:
   ORGANIZATION_ID: "org_eternity"
   PROJECT_ID: "project_glass"
   ## LLM name
-  MODEL: "deepseek-r1:70b"
+  MODEL: "llama3.3_param:latest"
   # system prompt is at the very end of this file
   VERBOSE: False
 

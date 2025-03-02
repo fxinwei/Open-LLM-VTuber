@@ -120,7 +120,7 @@
     {
         "name": "haru",
         "description": "haru",
-        "url": "live2d-models/haru/haru_greeter_t05.model3.json",
+        "url": "live2d-models/haru_pixi/haru_greeter_t03.model3.json",
         "kScale": 0.0003,
         "initialXshift": 0,
         "initialYshift": 200,
@@ -128,12 +128,14 @@
         "kYOffset": -200,
         "idleMotionGroupName": "idle",
         "emotionMap": {
-            "neutral": 0,
-            "curiosity": 4,
-            "pride": 5,
-            "realization": 4,
-            "optimism": 1,
-            "excitement": 6
+        "neutral": 0,
+	    "angry": 2,
+	    "sad": 3,
+        "curious": 4,
+        "surprise": 5,
+        "happy": 1,
+        "shy": 6,
+	    "indifferent": 7
         }
     },
     {
