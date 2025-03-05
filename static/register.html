@@ -117,6 +117,11 @@
             vertical-align: middle;
             margin: 0;
         }
+        .required-asterisk {
+            color: red;
+            font-weight: bold; 
+            margin-right: 4px;
+        }
         
         button {
             width: 100%;
@@ -167,32 +172,45 @@
 </head>
 <body>
     <div class="container">
-        <h2>アカウントを作成</h2>
+        <h2>
+            アカウントを作成 
+            （<span class="required-asterisk">*</span>は必須項目）
+        </h2>          
         <form id="registerForm">
             <div class="form-group">
-                <label for="last_name">姓:</label>
+                <label for="last_name">
+                    <span class="required-asterisk">*</span>姓:
+                </label>
                 <input type="text" id="last_name" name="last_name" required>
             </div>
             <div class="form-group">
-                <label for="first_name">名:</label>
+                <label for="first_name">
+                    <span class="required-asterisk">*</span>名:
+                </label>
                 <input type="text" id="first_name" required></input>
             </div>
             <div class="form-group">
-                <label for="dob">生年月日:</label>
+                <label for="dob">
+                    <span class="required-asterisk">*</span>生年月日:
+                </label>
                 <input type="date" id="dob" name="dob" required>
             </div>
             <div class="form-group">
-                <label for="country">国:</label>
+                <label for="country">
+                    <span class="required-asterisk">*</span>国:
+                </label>
                 <select id="country" name="country" required>
                   <option value="">国を選択する</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="address">住所:</label>
-                <input type="text" id="address" name="address" required>
+                <label for="address">住所（任意）:</label>
+                <input type="text" id="address" name="address" />
             </div>
             <div class="form-group">
-                <label for="gender">性別:</label>
+                <label for="gender">
+                    <span class="required-asterisk">*</span>性別:
+                </label>
                 <select id="gender" name="gender" required>
                   <option value="">選択する</option>
                   <option value="female">女性</option>
@@ -201,22 +219,30 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="username">ユーザー名:</label>
+                <label for="username">
+                    <span class="required-asterisk">*</span>ユーザー名:
+                </label>
                 <input type="text" id="username" required>
             </div>
             <div class="form-group">
-                <label for="email">メールアドレス:</label>
+                <label for="email">
+                    <span class="required-asterisk">*</span>メールアドレス:
+                </label>
                 <input type="email" id="email" required>
             </div>
             <div class="form-group">
-                <label for="password">パスワード:</label>
+                <label for="password">
+                    <span class="required-asterisk">*</span>パスワード:
+                </label>
                 <input type="password" id="password" name="password" required>
                 <div class="guidance-message" id="password-guidance" style="display: none;">
                   * パスワードは8文字以上で、大文字、小文字、数字を含める必要があります
                 </div>
               </div>                    
             <div class="form-group">
-                <label for="confirmPassword">パスワードの確認:</label>
+                <label for="confirmPassword">
+                    <span class="required-asterisk">*</span>パスワードの確認:
+                </label>
                 <input type="password" id="confirmPassword" name="confirmPassword" required>
                 <div id="password-error" class="error-message">パスワードが一致しません</div>
                 <div class="show-password">
@@ -291,7 +317,8 @@
             const last_name = document.getElementById('last_name').value.trim();
             const date_of_birth = document.getElementById('dob').value.trim();
             const country = document.getElementById('country').value.trim();
-            const address = document.getElementById('address').value.trim();
+            const rawAddress = document.getElementById('address').value.trim();
+            const address = rawAddress === "" ? "None" : rawAddress; // default to None if empty
             const gender = document.getElementById('gender').value.trim();
 
             // verify passwords match
@@ -301,7 +328,7 @@
             }
 
             // verify if all fields are filled
-            if (!username || !email || !password || !first_name || !last_name || !date_of_birth || !country || !address || !gender) {
+            if (!username || !email || !password || !first_name || !last_name || !date_of_birth || !country || !gender) {
                 alert("すべての項目を入力してください。");
                 return;
             }

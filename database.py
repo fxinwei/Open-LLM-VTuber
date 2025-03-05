@@ -84,7 +84,7 @@ class Summary(BaseModel):
 
 def write_excel(template_path, base_dict, username, session_id, start_row, start_col):
 
-    new_excel_path = f"/home/nt/Documents/my_repo/Open-LLM-VTuber/static/dialogues/inteku_{username}_{session_id}.xlsx"
+    new_excel_path = f"/home/nt/Documents/my_repo/Open-LLM-VTuber/static/dialogues/intake_{username}_{session_id}.xlsx"
     shutil.copy(template_path, new_excel_path)
     book = load_workbook(new_excel_path)
 
@@ -184,7 +184,7 @@ def analyze_conversation(session_id: str, db: Session = Depends(get_db)):
             session.data_analyzed = output_info + output if output_info else output
             session.process_end_datetime = datetime.utcnow()
             # write to excel file
-            excel_template_path = "/home/nt/Documents/my_repo/Open-LLM-VTuber/static/dialogues/inteku_template.xlsx"
+            excel_template_path = "/home/nt/Documents/my_repo/Open-LLM-VTuber/static/dialogues/intake_template.xlsx"
             current_user = db.query(User).filter(User.username == session.username).first()
             write_excel(
                 template_path=excel_template_path,
