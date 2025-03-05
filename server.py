@@ -397,17 +397,17 @@ class WebSocketServer:
         )
         class AuthMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
-                if request.url.path in ["/login.html", "/verification-success.html", "/forgot-password.html", "/reset-password.html", "/reset-success.html", "/session-expired.html", "/register.html", "/auth/reset-password", "/auth/forgot-password", "/auth/verify", "/auth/register", "/auth/token", "/auth/checksession", "/auth/save_conversation"]:
+                if request.url.path != '/':
                     return await call_next(request)
                             
-                # 检查cookie中的token
-                token = request.cookies.get("access_token")
-                if not token or not token.startswith("Bearer "):
-                    return RedirectResponse(url="/login.html")
+                else:# 检查cookie中的token
+                    token = request.cookies.get("access_token")
+                    if not token or not token.startswith("Bearer "):
+                        return RedirectResponse(url="/login.html")
                             
-                return await call_next(request)        
+                    return await call_next(request)        
         self.app.mount("/", StaticFiles(directory="static", html=True), name="static")
-        self.app.add_middleware(AuthMiddleware)
+        # self.app.add_middleware(AuthMiddleware)
 
     def run(self, host: str = "127.0.0.1", port: int = 8000, log_level: str = "info"):
         """Runs the FastAPI application using Uvicorn."""
