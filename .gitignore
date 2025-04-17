@@ -56,4 +56,6 @@ conf.yaml.backup
 !config_alts/*en-teacher*.yaml
 !config_alts/*nurse*.yaml
 /static/dialogues
+/static/voice
 /live2d-models
+llm_params.csv

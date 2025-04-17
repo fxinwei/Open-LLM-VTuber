@@ -346,7 +346,7 @@ class OpenLLMVTuberMain:
             images=[image_path],
             # prompt='この画像について日本語で記述し、注意点を教えてください。100文字超えないでください。',
             # prompt='日本語で100文字以内で今の空間をいきいきとイメージして感性的に描写します。',
-            prompt='Please describe the picture with no more than 100 poet-like words.',
+            prompt='If there is plant or flower in the picture, please tell me its name and related information.',
             options=generation_params
         )
         print(f"response: {res['response']}")
